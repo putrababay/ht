@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>HT Push-to-Talk (PTT) Realtime</title>
+
+  <!-- PWA Primary Meta Tags -->
+  <meta name="theme-color" content="#030712">
+  <meta name="description" content="Aplikasi HT Push-to-Talk Realtime berbasis WebRTC PWA">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Tactical HT">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3659/3659898.png">
+
+  <!-- Inline Web App Manifest Data URI -->
+  <link rel="manifest" href='data:application/manifest+json,{"name":"Tactical HT Walkie Talkie","short_name":"Tactical HT","start_url":".","display":"standalone","background_color":"#030712","theme_color":"#030712","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/3659/3659898.png","sizes":"192x192","type":"image/png"}]}'>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PeerJS for WebRTC Multi-User Signaling -->
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    /* Prevent selection and default touch actions for mobile PTT button */
+    .no-select {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+    
+    /* Digital LCD Glow */
+    .lcd-text {
+      font-family: 'Courier New', Courier, monospace;
+      text-shadow: 0 0 5px rgba(16, 185, 129, 0.6);
+    }
+    
+    .lcd-screen-green {
+      background-color: #062e1b;
+      border: 3px solid #064e3b;
+    }
+
+    /* Active Transmit Glow */
+    .ptt-tx-active {
+      background: radial-gradient(circle, #ef4444 0%, #991b1b 100%);
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.4);
+    }
+
+    /* Idle PTT Button */
+    .ptt-idle {
+      background: linear-gradient(145deg, #374151, #1f2937);
+      box-shadow: 4px 4px 10px #111827, -4px -4px 10px #4b5563;
+    }
+
+    .ptt-idle:active {
+      box-shadow: inset 2px 2px 5px #111827, inset -2px -2px 5px #4b5563;
+    }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 no-select font-sans">
+
+  <!-- Main Walkie Talkie Shell -->
+  <div class="w-full max-w-md bg-gray-900 border-4 border-gray-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col relative">
+    
+    <!-- Top Antenna & Dial Accent -->
+    <div class="h-6 bg-gray-950 flex items-center justify-between px-8 border-b border-gray-800 relative">
+      <div class="absolute -top-5 left-8 w-4 h-8 bg-gray-800 rounded-t-sm border-t border-gray-600"></div>
+      <div class="absolute -top-4 right-8 w-7 h-6 bg-gray-700 rounded-t-md border-t border-gray-500"></div>
+    </div>
+
+    <!-- Header / Brand Banner -->
+    <div class="bg-gray-800 px-4 py-3 flex items-center justify-between border-b border-gray-700">
+      <div class="flex items-center space-x-2">
+        <i class="fa-solid text-amber-500 text-lg">📻</i>
+        <div>
+          <h1 class="font-extrabold text-sm tracking-wider text-gray-200">TACTICAL HT-99 PRO</h1>
+          <p class="text-[10px] text-gray-400">WebRTC PWA • 16-CH PMR • VOX Auto</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button id="btn-pwa-install" class="hidden text-[10px] bg-amber-600 hover:bg-amber-500 text-white font-bold px-2 py-1 rounded shadow flex items-center space-x-1 animate-bounce">
+          <i class="fa-solid fa-download"></i>
+          <span>Install App</span>
+        </button>
+        <span id="led-indicator" class="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse"></span>
+        <span id="led-text" class="text-[10px] font-mono font-bold text-emerald-400">READY</span>
+      </div>
+    </div>
+
+    <!-- Digital LCD Screen -->
+    <div class="p-4 bg-gray-900">
+      <div class="lcd-screen-green rounded-xl p-3 text-emerald-400 flex flex-col justify-between shadow-inner relative overflow-hidden">
+        
+        <!-- LCD Top Info Bar -->
+        <div class="flex justify-between items-center text-xs font-mono border-b border-emerald-900/60 pb-1">
+          <div class="flex items-center space-x-2">
+            <span id="battery-icon"><i class="fa-solid fa-battery-full"></i></span>
+            <span id="rssi-display"><i class="fa-solid fa-signal"></i> CH: <strong id="channel-num-display">01</strong></span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span id="vox-badge" class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-950 text-gray-500 font-bold border border-emerald-900">VOX OFF</span>
+            <span id="tx-rx-badge" class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-300 font-bold border border-emerald-700">STANDBY</span>
+          </div>
+        </div>
+
+        <!-- Frequency & Room Display -->
+        <div class="my-2 text-center">
+          <div id="freq-display" class="text-2xl sm:text-3xl font-extrabold tracking-wider lcd-text text-emerald-300">
+            446.00625 MHz
+          </div>
+          <div id="status-subtext" class="text-xs font-mono mt-1 text-emerald-400/80 truncate">
+            Channel: <span id="current-room-name" class="font-bold underline">PMR-CH-1</span>
+          </div>
+        </div>
+
+        <!-- Audio Oscilloscope / Visualizer Wave -->
+        <div class="h-10 w-full bg-emerald-950/60 rounded border border-emerald-800/50 flex items-center justify-center overflow-hidden relative">
+          <canvas id="visualizer" class="w-full h-full"></canvas>
+          <div id="no-audio-text" class="absolute text-[11px] font-mono text-emerald-600/70">Audio Idle</div>
+        </div>
+
+        <!-- Speaker & User Status Banner -->
+        <div id="active-speaker-box" class="mt-2 text-[11px] font-mono bg-emerald-950/80 p-1.5 rounded border border-emerald-800 flex justify-between items-center">
+          <span class="truncate">ID Anda: <strong id="my-peer-id" class="text-emerald-200">Menghubungkan...</strong></span>
+          <span id="users-count" class="bg-emerald-900 px-1.5 py-0.5 rounded text-[10px] font-bold">1 Online</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Control Panel / Channel & Settings -->
+    <div class="px-4 py-2 bg-gray-900 grid grid-cols-2 gap-2 text-xs">
+      
+      <!-- Channel Selector (16 Channels) -->
+      <div class="bg-gray-800 p-2 rounded-lg border border-gray-700 flex flex-col justify-between">
+        <label class="text-[10px] text-gray-400 font-semibold uppercase flex justify-between">
+          <span>Saluran Radio</span>
+          <span class="text-amber-400 font-mono">16 CH</span>
+        </label>
+        <div class="flex items-center space-x-1 mt-1">
+          <button id="btn-ch-down" class="bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-gray-200 w-8 h-8 rounded font-bold flex items-center justify-center">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <select id="channel-select" class="w-full bg-gray-900 border border-gray-700 text-amber-400 font-mono text-xs rounded px-1 py-1 text-center font-bold focus:outline-none">
+            <!-- Populated via JavaScript -->
+          </select>
+          <button id="btn-ch-up" class="bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-gray-200 w-8 h-8 rounded font-bold flex items-center justify-center">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Custom Room / Group Joiner -->
+      <div class="bg-gray-800 p-2 rounded-lg border border-gray-700 flex flex-col justify-between">
+        <label class="text-[10px] text-gray-400 font-semibold uppercase">Frekuensi Khusus (Room)</label>
+        <div class="flex items-center space-x-1 mt-1">
+          <input type="text" id="room-input" value="PMR-CH-1" class="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-amber-300 font-mono focus:outline-none focus:border-amber-500" placeholder="Nama Room">
+          <button id="btn-join-room" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-2 py-1 rounded text-xs">
+            Set
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toggle Controls (VOX Auto, Radio Filters & Sound FX) -->
+    <div class="px-4 py-2 bg-gray-900 space-y-2 border-t border-gray-800/80">
+      
+      <!-- Top Row Action Toggles -->
+      <div class="flex justify-between items-center text-xs gap-1 flex-wrap">
+        <!-- VOX Toggle Button -->
+        <button id="toggle-vox" class="flex items-center space-x-1 px-2.5 py-1.5 rounded bg-gray-800 border border-gray-700 text-gray-400 font-mono text-[11px]">
+          <i class="fa-solid fa-microphone-lines"></i>
+          <span>VOX: <strong id="vox-status">OFF</strong></span>
+        </button>
+
+        <!-- HT Mic Filter Toggle -->
+        <button id="toggle-filter" class="flex items-center space-x-1 px-2.5 py-1.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-400 font-mono text-[11px]">
+          <i class="fa-solid fa-filter"></i>
+          <span>Filter: <strong id="filter-status">ON</strong></span>
+        </button>
+
+        <!-- Roger Beep Toggle -->
+        <button id="toggle-sound" class="flex items-center space-x-1 px-2.5 py-1.5 rounded bg-gray-800 border border-gray-700 text-amber-400 font-mono text-[11px]">
+          <i class="fa-solid fa-volume-high"></i>
+          <span>Beep: <strong id="roger-status">ON</strong></span>
+        </button>
+
+        <!-- STUN/TURN ICE Settings -->
+        <button id="btn-open-stun" class="flex items-center space-x-1 px-2 py-1.5 rounded bg-blue-950 border border-blue-800 text-blue-300 font-mono text-[11px]">
+          <i class="fa-solid fa-network-wired"></i>
+          <span>STUN</span>
+        </button>
+      </div>
+
+      <!-- VOX Sensitivity Slider & Level Meter (Hidden by default until VOX ON) -->
+      <div id="vox-control-panel" class="hidden bg-gray-950 p-2 rounded-lg border border-gray-800 space-y-1.5">
+        <div class="flex justify-between items-center text-[10px] font-mono text-amber-400">
+          <span>Sensitivitas VOX (Pemicu Suara Otomatis):</span>
+          <span id="vox-sens-label">30%</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <input type="range" id="vox-sens-slider" min="5" max="90" value="30" class="w-full accent-amber-500 h-1.5 bg-gray-800 rounded appearance-none cursor-pointer">
+        </div>
+        <!-- Live Audio Level Meter -->
+        <div class="w-full h-2 bg-gray-900 rounded overflow-hidden relative border border-gray-800 flex items-center">
+          <div id="vox-level-bar" class="h-full bg-emerald-500 w-0 transition-all duration-75"></div>
+          <div id="vox-threshold-marker" class="absolute top-0 bottom-0 w-1 bg-amber-400 shadow" style="left: 30%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main PTT Button Area -->
+    <div class="p-6 bg-gray-950 flex flex-col items-center justify-center relative border-t border-gray-800">
+      
+      <p class="text-xs text-gray-400 mb-3 text-center font-medium">
+        Tahan tombol di bawah atau tekan <kbd class="px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded text-amber-400">Space</kbd> / <kbd class="px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded text-amber-400">T</kbd> untuk bicara
+      </p>
+
+      <!-- PTT Big Radial Button -->
+      <button id="ptt-button" class="w-40 h-40 rounded-full ptt-idle border-4 border-gray-700 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer">
+        <i class="fa-solid fa-microphone text-3xl mb-1 text-amber-500"></i>
+        <span class="font-extrabold text-base tracking-wider">PUSH TO TALK</span>
+        <span id="ptt-subtext" class="text-[10px] text-gray-400 font-mono mt-0.5">TAHAN UNTUK BICARA</span>
+      </button>
+
+      <div id="mic-warning" class="hidden mt-3 text-center text-xs text-rose-400 bg-rose-950/60 p-2 rounded border border-rose-800">
+        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Izin mikrofon diperlukan. Harap izinkan di browser.
+      </div>
+    </div>
+
+    <!-- Connected Active Peers List Footer -->
+    <div class="bg-gray-950 px-4 py-3 border-t border-gray-800">
+      <div class="flex justify-between items-center mb-1">
+        <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Anggota Saluran</span>
+        <button id="btn-share" class="text-[10px] bg-gray-800 hover:bg-gray-700 text-amber-400 px-2 py-0.5 rounded border border-gray-700">
+          <i class="fa-solid fa-share-nodes mr-1"></i>Bagikan Room
+        </button>
+      </div>
+      <div id="peers-list" class="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto pt-1">
+        <span class="text-[11px] text-gray-500 italic">Mencari anggota lain...</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Custom STUN/TURN Config Modal -->
+  <div id="modal-turn" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-sm p-4 text-gray-200 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-gray-800 pb-2 mb-3">
+        <h3 class="font-bold text-amber-400 text-sm flex items-center space-x-2">
+          <i class="fa-solid fa-network-wired"></i>
+          <span>Pengaturan STUN / TURN Server</span>
+        </h3>
+        <button id="btn-close-turn" class="text-gray-400 hover:text-white font-bold">&times;</button>
+      </div>
+
+      <p class="text-[11px] text-gray-400 mb-3">
+        STUN publik Google diaktifkan otomatis. Tambahkan TURN server opsional untuk jaringan terproteksi NAT.
+      </p>
+
+      <div class="space-y-2 text-xs">
+        <div>
+          <label class="block text-[10px] font-mono text-gray-400 uppercase mb-1">TURN Server URL</label>
+          <input type="text" id="turn-url-input" placeholder="turn:turn.example.com:3478" class="w-full bg-gray-950 border border-gray-700 rounded px-2.5 py-1.5 text-blue-300 font-mono focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-gray-400 uppercase mb-1">Username (Opsional)</label>
+          <input type="text" id="turn-user-input" placeholder="user123" class="w-full bg-gray-950 border border-gray-700 rounded px-2.5 py-1.5 text-gray-200 font-mono focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-gray-400 uppercase mb-1">Credential (Opsional)</label>
+          <input type="password" id="turn-pass-input" placeholder="••••••••" class="w-full bg-gray-950 border border-gray-700 rounded px-2.5 py-1.5 text-gray-200 font-mono focus:outline-none focus:border-blue-500">
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-2 mt-4 pt-2 border-t border-gray-800">
+        <button id="btn-save-turn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-3 py-1.5 rounded-lg">
+          Simpan & Reconnect
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center space-y-2 pointer-events-none"></div>
+
+  <script>
+    // --- 16 PMR446 Tactical Channels ---
+    const PMR_CHANNELS = [
+      { ch: 1, freq: "446.00625 MHz" },
+      { ch: 2, freq: "446.01875 MHz" },
+      { ch: 3, freq: "446.03125 MHz" },
+      { ch: 4, freq: "446.04375 MHz" },
+      { ch: 5, freq: "446.05625 MHz" },
+      { ch: 6, freq: "446.06875 MHz" },
+      { ch: 7, freq: "446.08125 MHz" },
+      { ch: 8, freq: "446.09375 MHz" },
+      { ch: 9, freq: "446.10625 MHz" },
+      { ch: 10, freq: "446.11875 MHz" },
+      { ch: 11, freq: "446.13125 MHz" },
+      { ch: 12, freq: "446.14375 MHz" },
+      { ch: 13, freq: "446.15625 MHz" },
+      { ch: 14, freq: "446.16875 MHz" },
+      { ch: 15, freq: "446.18125 MHz" },
+      { ch: 16, freq: "446.19375 MHz" }
+    ];
+
+    // --- State Variables ---
+    let currentChannelIdx = 0;
+    let roomName = "PMR-CH-1";
+    let peer = null;
+    let myPeerId = "";
+    let dataConnections = new Map();
+    let activeCalls = new Map();
+    let connectedPeersInfo = new Set();
+    let activeBroadcaster = null;
+
+    // Audio State
+    let audioCtx = null;
+    let micStream = null;
+    let micTrack = null;
+    let analyserNode = null;
+    let voxAnalyserNode = null;
+    let visualizerAnimFrame = null;
+    let voxAnimFrame = null;
+    let audioFilterEnabled = true;
+    let soundFxEnabled = true;
+
+    // PTT & VOX States
+    let isTransmitting = false;
+    let isReceiving = false;
+    let voxEnabled = false;
+    let voxThreshold = 30; // 30% volume threshold
+    let voxHangTimeTimer = null;
+    let voxAutoTriggered = false;
+
+    // Custom TURN configuration state
+    let customTurnConfig = { url: "", username: "", password: "" };
+    let deferredPwaPrompt = null;
+
+    // --- DOM References ---
+    let myPeerIdElem, usersCountElem, peersListElem, ledIndicator, ledText, txRxBadge;
+    let pttBtn, pttSubtext, freqDisplay, channelNumDisplay, chSelectElem, currentRoomNameElem;
+    let canvas, canvasCtx, noAudioText, micWarning, voxBadge, voxStatusElem, voxControlPanel;
+    let voxSensSlider, voxSensLabel, voxLevelBar, voxThresholdMarker;
+
+    // Toast Notification Handler
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `px-4 py-2 rounded-xl text-xs font-mono font-bold shadow-2xl transition-all duration-300 transform translate-y-2 opacity-0 flex items-center space-x-2 border pointer-events-auto ${
+        type === 'success' 
+          ? 'bg-emerald-950 border-emerald-700 text-emerald-300' 
+          : type === 'warning'
+          ? 'bg-amber-950 border-amber-700 text-amber-300'
+          : 'bg-gray-900 border-gray-700 text-gray-200'
+      }`;
+      toast.innerHTML = `<i class="fa-solid fa-circle-info"></i><span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // Initialize Web Audio Context safely on user interaction
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // Play HT Roger Beep sound
+    function playRogerBeep() {
+      if (!soundFxEnabled) return;
+      initAudioContext();
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1200, now);
+      osc.frequency.setValueAtTime(800, now + 0.08);
+
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.18);
+    }
+
+    // Play Radio Squelch Burst (Static sound)
+    function playSquelchNoise(duration = 0.12) {
+      if (!soundFxEnabled) return;
+      initAudioContext();
+      const bufferSize = audioCtx.sampleRate * duration;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+
+      const whiteNoise = audioCtx.createBufferSource();
+      whiteNoise.buffer = buffer;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1800;
+      filter.Q.value = 3;
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+      whiteNoise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      whiteNoise.start();
+    }
+
+    // --- Microphone & Audio Processing Pipeline ---
+    async function setupMicrophone() {
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          },
+          video: false
+        });
+
+        micTrack = micStream.getAudioTracks()[0];
+        micTrack.enabled = true; // Keep active for VOX analysis
+        micWarning.classList.add('hidden');
+        
+        initAudioContext();
+        setupVisualizerSource(micStream);
+        setupVoxAnalyser(micStream);
+      } catch (err) {
+        console.error("Gagal mengakses mikrofon:", err);
+        micWarning.classList.remove('hidden');
+      }
+    }
+
+    // Apply Radio Bandpass Filter to emulate genuine HT Walkie-Talkie Voice
+    function createRadioVoiceFilter(stream) {
+      if (!audioCtx || !audioFilterEnabled) return stream;
+      
+      const source = audioCtx.createMediaStreamSource(stream);
+      
+      const highpass = audioCtx.createBiquadFilter();
+      highpass.type = 'highpass';
+      highpass.frequency.value = 320;
+
+      const lowpass = audioCtx.createBiquadFilter();
+      lowpass.type = 'lowpass';
+      lowpass.frequency.value = 3000;
+
+      const waveShaper = audioCtx.createWaveShaper();
+      waveShaper.curve = makeDistortionCurve(8);
+
+      const destination = audioCtx.createMediaStreamDestination();
+
+      source.connect(highpass);
+      highpass.connect(lowpass);
+      lowpass.connect(waveShaper);
+      waveShaper.connect(destination);
+
+      return destination.stream;
+    }
+
+    function makeDistortionCurve(amount) {
+      const k = typeof amount === 'number' ? amount : 50,
+        n_samples = 44100,
+        curve = new Float32Array(n_samples),
+        deg = Math.PI / 180;
+      for (let i = 0; i < n_samples; ++i) {
+        let x = (i * 2) / n_samples - 1;
+        curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+      }
+      return curve;
+    }
+
+    // --- Automatic Voice Detection (VOX Engine) ---
+    function setupVoxAnalyser(stream) {
+      if (!audioCtx) return;
+      const source = audioCtx.createMediaStreamSource(stream);
+      voxAnalyserNode = audioCtx.createAnalyser();
+      voxAnalyserNode.fftSize = 256;
+      source.connect(voxAnalyserNode);
+
+      monitorVoxLevel();
+    }
+
+    function monitorVoxLevel() {
+      if (!voxAnalyserNode) return;
+      const dataArray = new Uint8Array(voxAnalyserNode.frequencyBinCount);
+      voxAnalyserNode.getByteFrequencyData(dataArray);
+
+      // Calculate average volume percentage
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        sum += dataArray[i];
+      }
+      const avgVolume = sum / dataArray.length;
+      const volumePercent = Math.min(100, Math.round((avgVolume / 128) * 100));
+
+      // Update Live VOX Meter UI
+      if (voxLevelBar) {
+        voxLevelBar.style.width = `${volumePercent}%`;
+        voxLevelBar.className = volumePercent >= voxThreshold 
+          ? 'h-full bg-amber-500 transition-all duration-75' 
+          : 'h-full bg-emerald-500 transition-all duration-75';
+      }
+
+      // Check VOX Voice Trigger Condition
+      if (voxEnabled && !isReceiving) {
+        if (volumePercent >= voxThreshold) {
+          // Clear any pending hang time stop
+          if (voxHangTimeTimer) {
+            clearTimeout(voxHangTimeTimer);
+            voxHangTimeTimer = null;
+          }
+
+          if (!isTransmitting) {
+            voxAutoTriggered = true;
+            startTransmitting();
+          }
+        } else if (isTransmitting && voxAutoTriggered) {
+          // Voice dropped below threshold -> set hang time delay before stopping PTT
+          if (!voxHangTimeTimer) {
+            voxHangTimeTimer = setTimeout(() => {
+              stopTransmitting();
+              voxAutoTriggered = false;
+              voxHangTimeTimer = null;
+            }, 700); // 700ms hang time
+          }
+        }
+      }
+
+      voxAnimFrame = requestAnimationFrame(monitorVoxLevel);
+    }
+
+    // --- Audio Canvas Visualizer ---
+    function setupVisualizerSource(stream) {
+      if (!audioCtx) return;
+      if (analyserNode) analyserNode.disconnect();
+
+      const source = audioCtx.createMediaStreamSource(stream);
+      analyserNode = audioCtx.createAnalyser();
+      analyserNode.fftSize = 64;
+      source.connect(analyserNode);
+
+      drawVisualizer();
+    }
+
+    function drawVisualizer() {
+      if (!canvasCtx) return;
+      const width = canvas.width = canvas.parentElement.clientWidth;
+      const height = canvas.height = canvas.parentElement.clientHeight;
+
+      if (!analyserNode || (!isTransmitting && !isReceiving)) {
+        canvasCtx.clearRect(0, 0, width, height);
+        noAudioText.style.display = 'block';
+        return;
+      }
+
+      noAudioText.style.display = 'none';
+      const bufferLength = analyserNode.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      analyserNode.getByteFrequencyData(dataArray);
+
+      canvasCtx.clearRect(0, 0, width, height);
+      const barWidth = (width / bufferLength) * 2;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (dataArray[i] / 255) * height;
+
+        canvasCtx.fillStyle = isTransmitting 
+          ? `rgb(${150 + barHeight * 2}, 30, 30)` 
+          : `rgb(16, ${140 + barHeight * 2}, 100)`;
+        
+        canvasCtx.fillRect(x, height - barHeight, barWidth - 1, barHeight);
+        x += barWidth + 1;
+      }
+
+      visualizerAnimFrame = requestAnimationFrame(drawVisualizer);
+    }
+
+    // --- PeerJS Multi-User Signaling & Mesh Network ---
+    function initPeerConnection() {
+      const sanitizedRoom = roomName.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const uniqueSuffix = Math.random().toString(36).substring(2, 6);
+      myPeerId = `HT-${sanitizedRoom}-${uniqueSuffix}`;
+      myPeerIdElem.textContent = myPeerId;
+
+      if (peer) {
+        peer.destroy();
+      }
+
+      const defaultIceServers = [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
+        { urls: 'stun:global.stun.twilio.com:3478' }
+      ];
+
+      if (customTurnConfig.url.trim() !== "") {
+        const turnObj = { urls: customTurnConfig.url.trim() };
+        if (customTurnConfig.username) turnObj.username = customTurnConfig.username.trim();
+        if (customTurnConfig.password) turnObj.credential = customTurnConfig.password.trim();
+        defaultIceServers.push(turnObj);
+      }
+
+      peer = new Peer(myPeerId, {
+        config: {
+          iceServers: defaultIceServers,
+          sdpSemantics: 'unified-plan'
+        }
+      });
+
+      peer.on('open', (id) => {
+        console.log("Connected to PeerServer with ID:", id);
+        updateStatusDisplay('idle');
+        discoverChannelPeers();
+      });
+
+      peer.on('call', (call) => {
+        console.log("Incoming call from:", call.peer);
+        call.answer(micStream);
+
+        call.on('stream', (remoteStream) => {
+          playRemoteAudio(remoteStream, call.peer);
+        });
+
+        call.on('close', () => {
+          stopRemoteAudio(call.peer);
+        });
+
+        activeCalls.set(call.peer, call);
+      });
+
+      peer.on('connection', (conn) => {
+        setupDataConnection(conn);
+      });
+
+      peer.on('error', (err) => {
+        console.warn("PeerJS error:", err.type, err.message);
+        if (err.type === 'peer-unavailable') {
+          connectedPeersInfo.delete(err.peer);
+          updatePeersListUI();
+        }
+      });
+    }
+
+    function setupDataConnection(conn) {
+      dataConnections.set(conn.peer, conn);
+      connectedPeersInfo.add(conn.peer);
+      updatePeersListUI();
+
+      conn.on('data', (data) => {
+        if (data.type === 'PTT_START') {
+          handlePeerStartedTalking(conn.peer, data.userName);
+        } else if (data.type === 'PTT_STOP') {
+          handlePeerStoppedTalking(conn.peer);
+        } else if (data.type === 'HELLO') {
+          conn.send({ type: 'HELLO_ACK', peerId: myPeerId });
+        }
+      });
+
+      conn.on('close', () => {
+        dataConnections.delete(conn.peer);
+        connectedPeersInfo.delete(conn.peer);
+        updatePeersListUI();
+      });
+    }
+
+    function connectToPeer(targetPeerId) {
+      if (targetPeerId === myPeerId || dataConnections.has(targetPeerId)) return;
+
+      const conn = peer.connect(targetPeerId);
+      conn.on('open', () => {
+        setupDataConnection(conn);
+        conn.send({ type: 'HELLO', peerId: myPeerId });
+      });
+
+      if (micStream) {
+        const processedStream = createRadioVoiceFilter(micStream);
+        const call = peer.call(targetPeerId, processedStream);
+        call.on('stream', (remoteStream) => {
+          playRemoteAudio(remoteStream, targetPeerId);
+        });
+        activeCalls.set(targetPeerId, call);
+      }
+    }
+
+    function discoverChannelPeers() {
+      if (window.BroadcastChannel) {
+        const bc = new BroadcastChannel(`HT_CHANNEL_${roomName}`);
+        bc.postMessage({ type: 'ANNOUNCE_PEER', peerId: myPeerId });
+
+        bc.onmessage = (event) => {
+          if (event.data.type === 'ANNOUNCE_PEER' && event.data.peerId !== myPeerId) {
+            connectToPeer(event.data.peerId);
+            bc.postMessage({ type: 'ANNOUNCE_ACK', peerId: myPeerId });
+          } else if (event.data.type === 'ANNOUNCE_ACK' && event.data.peerId !== myPeerId) {
+            connectToPeer(event.data.peerId);
+          }
+        };
+      }
+    }
+
+    function broadcastData(data) {
+      dataConnections.forEach((conn) => {
+        if (conn.open) {
+          conn.send(data);
+        }
+      });
+    }
+
+    // --- Remote Audio Playback ---
+    const remoteAudioElements = new Map();
+
+    function playRemoteAudio(stream, peerId) {
+      let audioEl = remoteAudioElements.get(peerId);
+      if (!audioEl) {
+        audioEl = document.createElement('audio');
+        audioEl.autoplay = true;
+        document.body.appendChild(audioEl);
+        remoteAudioElements.set(peerId, audioEl);
+      }
+      audioEl.srcObject = stream;
+    }
+
+    function stopRemoteAudio(peerId) {
+      const audioEl = remoteAudioElements.get(peerId);
+      if (audioEl) {
+        audioEl.pause();
+        audioEl.srcObject = null;
+        audioEl.remove();
+        remoteAudioElements.delete(peerId);
+      }
+    }
+
+    function handlePeerStartedTalking(peerId, userName) {
+      isReceiving = true;
+      activeBroadcaster = peerId;
+      playSquelchNoise(0.1);
+      updateStatusDisplay('receiving', peerId);
+      setupVisualizerSource(remoteAudioElements.get(peerId)?.srcObject || micStream);
+    }
+
+    function handlePeerStoppedTalking(peerId) {
+      isReceiving = false;
+      activeBroadcaster = null;
+      playRogerBeep();
+      updateStatusDisplay('idle');
+      drawVisualizer();
+    }
+
+    // --- PTT Push-to-Talk Action Handlers ---
+    function startTransmitting() {
+      if (isTransmitting || isReceiving) return;
+      initAudioContext();
+
+      if (!micStream) {
+        setupMicrophone().then(() => {
+          executePTTStart();
+        });
+        return;
+      }
+      executePTTStart();
+    }
+
+    function executePTTStart() {
+      isTransmitting = true;
+
+      if (navigator.vibrate) navigator.vibrate(40);
+
+      playSquelchNoise(0.08);
+      updateStatusDisplay('transmitting');
+
+      broadcastData({ type: 'PTT_START', userName: myPeerId });
+      
+      if (micStream) {
+        setupVisualizerSource(micStream);
+      }
+    }
+
+    function stopTransmitting() {
+      if (!isTransmitting) return;
+
+      isTransmitting = false;
+
+      playRogerBeep();
+      updateStatusDisplay('idle');
+
+      broadcastData({ type: 'PTT_STOP' });
+      drawVisualizer();
+    }
+
+    // Update UI Status Displays (LCD & LEDs)
+    function updateStatusDisplay(state, peerInfo = '') {
+      switch (state) {
+        case 'transmitting':
+          ledIndicator.className = "w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_12px_#ef4444] animate-ping";
+          ledText.className = "text-[10px] font-mono font-bold text-rose-400";
+          ledText.textContent = "TX (TRANSMIT)";
+          txRxBadge.className = "px-1.5 py-0.5 rounded text-[10px] bg-rose-950 text-rose-300 font-bold border border-rose-700";
+          txRxBadge.textContent = "TRANSMITTING";
+          pttBtn.className = "w-40 h-40 rounded-full ptt-tx-active border-4 border-rose-400 flex flex-col items-center justify-center text-white shadow-2xl no-select cursor-pointer scale-95";
+          pttSubtext.textContent = voxAutoTriggered ? "VOX OTOMATIS MENGIRIM..." : "SEDANG MENGIRIM...";
+          break;
+
+        case 'receiving':
+          ledIndicator.className = "w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_12px_#22d3ee] animate-pulse";
+          ledText.className = "text-[10px] font-mono font-bold text-cyan-400";
+          ledText.textContent = "RX (RECEIVE)";
+          txRxBadge.className = "px-1.5 py-0.5 rounded text-[10px] bg-cyan-950 text-cyan-300 font-bold border border-cyan-700";
+          txRxBadge.textContent = `RX: ${peerInfo.substring(0, 10)}...`;
+          pttBtn.className = "w-40 h-40 rounded-full ptt-idle border-4 border-cyan-600 opacity-60 flex flex-col items-center justify-center text-gray-400 no-select cursor-not-allowed";
+          pttSubtext.textContent = "SALURAN SIBUK";
+          break;
+
+        case 'idle':
+        default:
+          ledIndicator.className = "w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]";
+          ledText.className = "text-[10px] font-mono font-bold text-emerald-400";
+          ledText.textContent = "STANDBY";
+          txRxBadge.className = "px-1.5 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-300 font-bold border border-emerald-700";
+          txRxBadge.textContent = "STANDBY";
+          pttBtn.className = "w-40 h-40 rounded-full ptt-idle border-4 border-gray-700 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer";
+          pttSubtext.textContent = voxEnabled ? "VOX AKTIF • OTOMATIS BICARA" : "TAHAN UNTUK BICARA";
+          break;
+      }
+    }
+
+    function updatePeersListUI() {
+      const count = connectedPeersInfo.size + 1;
+      usersCountElem.textContent = `${count} Online`;
+
+      peersListElem.innerHTML = '';
+      
+      const myBadge = document.createElement('span');
+      myBadge.className = "px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950 border border-emerald-800 text-emerald-300 flex items-center space-x-1";
+      myBadge.innerHTML = `<i class="fa-solid fa-user-large text-[9px]"></i> <span>Anda (${myPeerId.substring(0, 8)})</span>`;
+      peersListElem.appendChild(myBadge);
+
+      connectedPeersInfo.forEach((pId) => {
+        const isSpeaking = activeBroadcaster === pId;
+        const peerBadge = document.createElement('span');
+        peerBadge.className = `px-2 py-0.5 rounded text-[10px] font-mono border flex items-center space-x-1 ${
+          isSpeaking 
+            ? 'bg-cyan-950 border-cyan-600 text-cyan-300 animate-pulse' 
+            : 'bg-gray-800 border-gray-700 text-gray-300'
+        }`;
+        peerBadge.innerHTML = `<i class="fa-solid ${isSpeaking ? 'fa-walkie-talkie text-cyan-400' : 'fa-user'} text-[9px]"></i> <span>${pId.substring(0, 10)}</span>`;
+        peersListElem.appendChild(peerBadge);
+      });
+    }
+
+    function populateChannelDropdown() {
+      chSelectElem.innerHTML = '';
+      PMR_CHANNELS.forEach((ch, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = `CH ${ch.ch < 10 ? '0' + ch.ch : ch.ch}`;
+        chSelectElem.appendChild(opt);
+      });
+      chSelectElem.value = currentChannelIdx;
+    }
+
+    function setupEventListeners() {
+      // PTT Button Events (Touch & Mouse)
+      pttBtn.addEventListener('mousedown', (e) => { e.preventDefault(); startTransmitting(); });
+      pttBtn.addEventListener('mouseup', (e) => { e.preventDefault(); stopTransmitting(); });
+      pttBtn.addEventListener('mouseleave', (e) => { e.preventDefault(); stopTransmitting(); });
+
+      pttBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startTransmitting(); });
+      pttBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopTransmitting(); });
+      pttBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); stopTransmitting(); });
+
+      // Keyboard Controls (Spacebar & 'T' key hold to talk)
+      window.addEventListener('keydown', (e) => {
+        if ((e.code === 'Space' || e.code === 'KeyT') && !e.repeat && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT') {
+          e.preventDefault();
+          startTransmitting();
+        }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if ((e.code === 'Space' || e.code === 'KeyT') && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT') {
+          e.preventDefault();
+          stopTransmitting();
+        }
+      });
+
+      // Channel Switching via Dropdown & Chevron buttons
+      chSelectElem.addEventListener('change', (e) => {
+        currentChannelIdx = parseInt(e.target.value);
+        applyChannelChange();
+      });
+
+      document.getElementById('btn-ch-up').addEventListener('click', () => changeChannel(1));
+      document.getElementById('btn-ch-down').addEventListener('click', () => changeChannel(-1));
+
+      // Custom Room Joining
+      document.getElementById('btn-join-room').addEventListener('click', () => {
+        const val = document.getElementById('room-input').value.trim();
+        if (val) {
+          roomName = val;
+          currentRoomNameElem.textContent = roomName;
+          initPeerConnection();
+          showToast(`Frekuensi diubah ke ${roomName}`, 'info');
+        }
+      });
+
+      // VOX Auto Transmit Toggle
+      document.getElementById('toggle-vox').addEventListener('click', () => {
+        voxEnabled = !voxEnabled;
+        voxStatusElem.textContent = voxEnabled ? 'ON' : 'OFF';
+        const toggleBtn = document.getElementById('toggle-vox');
+        
+        if (voxEnabled) {
+          toggleBtn.className = "flex items-center space-x-1 px-2.5 py-1.5 rounded bg-amber-950 border border-amber-600 text-amber-300 font-mono text-[11px]";
+          voxBadge.className = "px-1.5 py-0.5 rounded text-[10px] bg-amber-950 text-amber-300 font-bold border border-amber-700 animate-pulse";
+          voxBadge.textContent = "VOX AUTO";
+          voxControlPanel.classList.remove('hidden');
+          showToast('VOX Aktif: PTT otomatis terdeteksi saat bicara!', 'success');
+        } else {
+          toggleBtn.className = "flex items-center space-x-1 px-2.5 py-1.5 rounded bg-gray-800 border border-gray-700 text-gray-400 font-mono text-[11px]";
+          voxBadge.className = "px-1.5 py-0.5 rounded text-[10px] bg-emerald-950 text-gray-500 font-bold border border-emerald-900";
+          voxBadge.textContent = "VOX OFF";
+          voxControlPanel.classList.add('hidden');
+          showToast('VOX Nonaktif (Manual PTT)', 'info');
+        }
+        updateStatusDisplay(isTransmitting ? 'transmitting' : 'idle');
+      });
+
+      // VOX Sensitivity Slider Listener
+      voxSensSlider.addEventListener('input', (e) => {
+        voxThreshold = parseInt(e.target.value);
+        voxSensLabel.textContent = `${voxThreshold}%`;
+        voxThresholdMarker.style.left = `${voxThreshold}%`;
+      });
+
+      // Filter Toggle
+      document.getElementById('toggle-filter').addEventListener('click', () => {
+        audioFilterEnabled = !audioFilterEnabled;
+        document.getElementById('filter-status').textContent = audioFilterEnabled ? 'ON' : 'OFF';
+        showToast(`HT Audio Filter: ${audioFilterEnabled ? 'Aktif' : 'Nonaktif'}`, 'info');
+      });
+
+      // Sound FX Toggle
+      document.getElementById('toggle-sound').addEventListener('click', () => {
+        soundFxEnabled = !soundFxEnabled;
+        document.getElementById('roger-status').textContent = soundFxEnabled ? 'ON' : 'OFF';
+        showToast(`Roger Beep: ${soundFxEnabled ? 'Aktif' : 'Nonaktif'}`, 'info');
+      });
+
+      // STUN/TURN Modal Listeners
+      const modalTurn = document.getElementById('modal-turn');
+      document.getElementById('btn-open-stun').addEventListener('click', () => {
+        modalTurn.classList.remove('hidden');
+      });
+      document.getElementById('btn-close-turn').addEventListener('click', () => {
+        modalTurn.classList.add('hidden');
+      });
+      document.getElementById('btn-save-turn').addEventListener('click', () => {
+        customTurnConfig.url = document.getElementById('turn-url-input').value;
+        customTurnConfig.username = document.getElementById('turn-user-input').value;
+        customTurnConfig.password = document.getElementById('turn-pass-input').value;
+        modalTurn.classList.add('hidden');
+        showToast("STUN/TURN diperbarui. Menghubungkan ulang...", "success");
+        initPeerConnection();
+      });
+
+      // Share Room Button
+      document.getElementById('btn-share').addEventListener('click', () => {
+        const shareUrl = window.location.origin + window.location.pathname + `?room=${encodeURIComponent(roomName)}`;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(shareUrl).then(() => {
+            showToast('Tautan Saluran HT berhasil disalin!', 'success');
+          }).catch(() => {
+            showToast(`Kode Room: ${roomName}`, 'info');
+          });
+        } else {
+          showToast(`Kode Room: ${roomName}`, 'info');
+        }
+      });
+
+      // PWA Install Event Listener
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPwaPrompt = e;
+        const installBtn = document.getElementById('btn-pwa-install');
+        installBtn.classList.remove('hidden');
+
+        installBtn.addEventListener('click', () => {
+          installBtn.classList.add('hidden');
+          deferredPwaPrompt.prompt();
+          deferredPwaPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              showToast('Aplikasi PWA Berhasil Diinstall!', 'success');
+            }
+            deferredPwaPrompt = null;
+          });
+        });
+      });
+    }
+
+    // Dynamic Service Worker for PWA
+    function registerPwaServiceWorker() {
+      if ('serviceWorker' in navigator) {
+        const swCode = `
+          const CACHE_NAME = 'ht-ptt-v2';
+          self.addEventListener('install', (e) => { self.skipWaiting(); });
+          self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
+          self.addEventListener('fetch', (e) => {
+            e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+          });
+        `;
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        navigator.serviceWorker.register(swUrl).catch((err) => {
+          console.log("Service worker registration skipped:", err);
+        });
+      }
+    }
+
+    function changeChannel(delta) {
+      currentChannelIdx = (currentChannelIdx + delta + PMR_CHANNELS.length) % PMR_CHANNELS.length;
+      chSelectElem.value = currentChannelIdx;
+      applyChannelChange();
+    }
+
+    function applyChannelChange() {
+      const chObj = PMR_CHANNELS[currentChannelIdx];
+      
+      freqDisplay.textContent = chObj.freq;
+      channelNumDisplay.textContent = chObj.ch < 10 ? `0${chObj.ch}` : chObj.ch;
+      
+      roomName = `PMR-CH-${chObj.ch}`;
+      document.getElementById('room-input').value = roomName;
+      currentRoomNameElem.textContent = roomName;
+
+      playSquelchNoise(0.05);
+      initPeerConnection();
+      showToast(`Pindah ke ${chObj.freq} (Channel ${chObj.ch})`, 'info');
+    }
+
+    // --- App Initialization ---
+    window.addEventListener('load', async () => {
+      // DOM Elements Binding
+      myPeerIdElem = document.getElementById('my-peer-id');
+      usersCountElem = document.getElementById('users-count');
+      peersListElem = document.getElementById('peers-list');
+      ledIndicator = document.getElementById('led-indicator');
+      ledText = document.getElementById('led-text');
+      txRxBadge = document.getElementById('tx-rx-badge');
+      pttBtn = document.getElementById('ptt-button');
+      pttSubtext = document.getElementById('ptt-subtext');
+      freqDisplay = document.getElementById('freq-display');
+      channelNumDisplay = document.getElementById('channel-num-display');
+      chSelectElem = document.getElementById('channel-select');
+      currentRoomNameElem = document.getElementById('current-room-name');
+      canvas = document.getElementById('visualizer');
+      canvasCtx = canvas.getContext('2d');
+      noAudioText = document.getElementById('no-audio-text');
+      micWarning = document.getElementById('mic-warning');
+      voxBadge = document.getElementById('vox-badge');
+      voxStatusElem = document.getElementById('vox-status');
+      voxControlPanel = document.getElementById('vox-control-panel');
+      voxSensSlider = document.getElementById('vox-sens-slider');
+      voxSensLabel = document.getElementById('vox-sens-label');
+      voxLevelBar = document.getElementById('vox-level-bar');
+      voxThresholdMarker = document.getElementById('vox-threshold-marker');
+
+      populateChannelDropdown();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('room')) {
+        roomName = urlParams.get('room');
+        document.getElementById('room-input').value = roomName;
+        currentRoomNameElem.textContent = roomName;
+      }
+
+      setupEventListeners();
+      registerPwaServiceWorker();
+      await setupMicrophone();
+      initPeerConnection();
+    });
+  </script>
+</body>
+</html>
