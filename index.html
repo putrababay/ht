@@ -869,7 +869,9 @@
       let micStream = null;
       let micTrack = null;
       let analyserNode = null;
+      let visualizerMediaSource = null;
       let voxAnalyserNode = null;
+      let voxMediaSource = null;
       let visualizerAnimFrame = null;
       let voxAnimFrame = null;
       let audioFilterEnabled = true;
@@ -1018,6 +1020,56 @@
         const rogerStatus = document.getElementById("roger-status");
         if (rogerStatus) rogerStatus.textContent = soundFxEnabled ? "ON" : "OFF";
         syncVoxUiState();
+      }
+
+      function isRemoteRxActive() {
+        if (isReceiving) return true;
+        if (!activeBroadcaster) return false;
+        const el = remoteAudioElements.get(activeBroadcaster);
+        return !!(el?.srcObject && !el.paused && !el.ended);
+      }
+
+      function restoreVoxStandbyState() {
+        syncVoxUiState();
+        if (appPoweredOff) return;
+
+        initAudioContext();
+        if (audioCtx?.state === "suspended") {
+          audioCtx.resume().catch(() => {});
+        }
+
+        if (voxEnabled && micStream) {
+          if (!voxAnalyserNode) {
+            setupVoxAnalyser(micStream);
+          } else {
+            if (voxAnimFrame) cancelAnimationFrame(voxAnimFrame);
+            voxAnimFrame = null;
+            monitorVoxLevel();
+          }
+        }
+
+        if (!isTransmitting && !isRemoteRxActive()) {
+          if (micStream) setupVisualizerSource(micStream);
+          else startVisualizerLoop();
+        }
+      }
+
+      function finalizePeerRxEnd(peerId) {
+        if (activeBroadcaster !== peerId && activeBroadcaster !== null) return;
+
+        isReceiving = false;
+        updateStatusDisplay("idle");
+        syncVoxUiState();
+
+        if (isRemoteRxActive()) {
+          rxHangTimeTimer = setTimeout(() => finalizePeerRxEnd(peerId), 250);
+          return;
+        }
+
+        rxHangTimeTimer = null;
+        activeBroadcaster = null;
+        playRogerBeep();
+        restoreVoxStandbyState();
       }
 
       function getAnalyserActivity(analyser, threshold = 6) {
@@ -1615,9 +1667,12 @@
         notifiedJoinPeers.delete(peerId);
 
         if (activeBroadcaster === peerId) {
+          if (rxHangTimeTimer) clearTimeout(rxHangTimeTimer);
+          rxHangTimeTimer = null;
           isReceiving = false;
           activeBroadcaster = null;
           updateStatusDisplay("idle");
+          restoreVoxStandbyState();
         }
 
         updatePeersListUI();
@@ -2302,6 +2357,7 @@
             ) {
               await setupMicrophone();
             }
+            restoreVoxStandbyState();
           } else {
             startBackgroundKeepAlive();
             if (audioCtx?.state === "suspended") await audioCtx.resume();
@@ -2486,17 +2542,40 @@
 
       // --- Automatic Voice Detection (VOX Engine) ---
       function setupVoxAnalyser(stream) {
-        if (!audioCtx) return;
-        const source = audioCtx.createMediaStreamSource(stream);
+        if (!audioCtx || !stream) return;
+
+        if (voxMediaSource) {
+          try {
+            voxMediaSource.disconnect();
+          } catch (e) {}
+        }
+        if (voxAnalyserNode) {
+          try {
+            voxAnalyserNode.disconnect();
+          } catch (e) {}
+        }
+
+        voxMediaSource = audioCtx.createMediaStreamSource(stream);
         voxAnalyserNode = audioCtx.createAnalyser();
         voxAnalyserNode.fftSize = 256;
-        source.connect(voxAnalyserNode);
+        voxMediaSource.connect(voxAnalyserNode);
 
+        if (voxAnimFrame) cancelAnimationFrame(voxAnimFrame);
+        voxAnimFrame = null;
         monitorVoxLevel();
       }
 
       function monitorVoxLevel() {
-        if (!voxAnalyserNode) return;
+        if (!voxEnabled) return;
+
+        if (!voxAnalyserNode) {
+          if (micStream) setupVoxAnalyser(micStream);
+          else {
+            voxAnimFrame = requestAnimationFrame(monitorVoxLevel);
+          }
+          return;
+        }
+
         const dataArray = new Uint8Array(voxAnalyserNode.frequencyBinCount);
         voxAnalyserNode.getByteFrequencyData(dataArray);
 
@@ -2520,10 +2599,9 @@
               : "h-full bg-emerald-500 transition-all duration-75";
         }
 
-        // Check VOX Voice Trigger Condition
-        if (voxEnabled && !isReceiving) {
+        // VOX hanya aktif saat saluran tidak sedang RX (termasuk tail audio peer)
+        if (!isRemoteRxActive()) {
           if (volumePercent >= voxThreshold) {
-            // Clear any pending hang time stop
             if (voxHangTimeTimer) {
               clearTimeout(voxHangTimeTimer);
               voxHangTimeTimer = null;
@@ -2542,11 +2620,11 @@
                 }
                 const recheck = new Uint8Array(voxAnalyserNode.frequencyBinCount);
                 voxAnalyserNode.getByteFrequencyData(recheck);
-                let sum = 0;
-                for (let i = 0; i < recheck.length; i++) sum += recheck[i];
+                let recheckSum = 0;
+                for (let i = 0; i < recheck.length; i++) recheckSum += recheck[i];
                 const vol = Math.min(
                   100,
-                  Math.round((sum / recheck.length / 128) * 100),
+                  Math.round((recheckSum / recheck.length / 128) * 100),
                 );
                 if (vol >= voxThreshold) {
                   voxHangTimeTimer = null;
@@ -2555,28 +2633,43 @@
                 stopTransmitting(true);
                 voxAutoTriggered = false;
                 voxHangTimeTimer = null;
+                restoreVoxStandbyState();
               }, 1400);
             }
           }
+        } else if (isTransmitting && voxAutoTriggered) {
+          // Peer ambil alih saluran — hentikan VOX TX agar tidak bentrok
+          if (voxHangTimeTimer) {
+            clearTimeout(voxHangTimeTimer);
+            voxHangTimeTimer = null;
+          }
+          stopTransmitting(true);
+          voxAutoTriggered = false;
         }
 
-        if (voxEnabled) voxAnimFrame = requestAnimationFrame(monitorVoxLevel);
+        voxAnimFrame = requestAnimationFrame(monitorVoxLevel);
       }
 
       // --- Audio Canvas Visualizer ---
       function setupVisualizerSource(stream) {
         if (!audioCtx || !stream) return;
+        if (visualizerMediaSource) {
+          try {
+            visualizerMediaSource.disconnect();
+          } catch (e) {}
+          visualizerMediaSource = null;
+        }
         if (analyserNode) {
           try {
             analyserNode.disconnect();
           } catch (e) {}
         }
 
-        const source = audioCtx.createMediaStreamSource(stream);
+        visualizerMediaSource = audioCtx.createMediaStreamSource(stream);
         analyserNode = audioCtx.createAnalyser();
         analyserNode.fftSize = 64;
         analyserNode.smoothingTimeConstant = 0.65;
-        source.connect(analyserNode);
+        visualizerMediaSource.connect(analyserNode);
 
         startVisualizerLoop();
       }
@@ -2598,19 +2691,23 @@
         let bufferLength = 0;
         let showWave = false;
 
-        if (analyserNode && (isTransmitting || isReceiving)) {
+        if (analyserNode && (isTransmitting || isRemoteRxActive())) {
           bufferLength = analyserNode.frequencyBinCount;
           dataArray = new Uint8Array(bufferLength);
           analyserNode.getByteFrequencyData(dataArray);
           showWave =
-            getAnalyserActivity(analyserNode) || isTransmitting || isReceiving;
+            getAnalyserActivity(analyserNode) ||
+            isTransmitting ||
+            isRemoteRxActive();
         } else if (voxEnabled && voxAnalyserNode) {
           bufferLength = Math.min(32, voxAnalyserNode.frequencyBinCount);
           dataArray = new Uint8Array(voxAnalyserNode.frequencyBinCount);
           voxAnalyserNode.getByteFrequencyData(dataArray);
           showWave =
-            getAnalyserActivity(voxAnalyserNode, 4) || isTransmitting;
-        } else if (isRemoteAudioPlaying() || isReceiving) {
+            getAnalyserActivity(voxAnalyserNode, 4) ||
+            isTransmitting ||
+            !isRemoteRxActive();
+        } else if (isRemoteRxActive()) {
           showWave = true;
         }
 
@@ -2949,6 +3046,15 @@
           clearTimeout(rxHangTimeTimer);
           rxHangTimeTimer = null;
         }
+        if (voxHangTimeTimer) {
+          clearTimeout(voxHangTimeTimer);
+          voxHangTimeTimer = null;
+        }
+        if (isTransmitting && voxAutoTriggered) {
+          stopTransmitting(true);
+          voxAutoTriggered = false;
+        }
+
         isReceiving = true;
         activeBroadcaster = peerId;
         playSquelchNoise(0.1);
@@ -2964,26 +3070,12 @@
 
       function handlePeerStoppedTalking(peerId) {
         if (rxHangTimeTimer) clearTimeout(rxHangTimeTimer);
-
-        rxHangTimeTimer = setTimeout(() => {
-          rxHangTimeTimer = null;
-          if (activeBroadcaster !== peerId && activeBroadcaster !== null) return;
-
-          isReceiving = false;
-          activeBroadcaster = null;
-          playRogerBeep();
-          updateStatusDisplay("idle");
-          syncVoxUiState();
-
-          if (!isTransmitting && micStream) {
-            setupVisualizerSource(micStream);
-          }
-        }, 1500);
+        rxHangTimeTimer = setTimeout(() => finalizePeerRxEnd(peerId), 1200);
       }
 
       // --- PTT Push-to-Talk Action Handlers ---
       function startTransmitting() {
-        if (isTransmitting || isReceiving) return;
+        if (isTransmitting || isRemoteRxActive()) return;
         initAudioContext();
 
         if (!isMicStreamActive()) {
@@ -3025,15 +3117,10 @@
 
         playRogerBeep();
         updateStatusDisplay("idle");
-        syncVoxUiState();
 
         broadcastData({ type: "PTT_STOP" });
 
-        if (micStream) {
-          setupVisualizerSource(micStream);
-        } else {
-          startVisualizerLoop();
-        }
+        restoreVoxStandbyState();
       }
 
       // Update UI Status Displays (LCD & LEDs)
@@ -3228,13 +3315,16 @@
               "VOX Aktif: PTT otomatis terdeteksi saat bicara!",
               "success",
             );
-            if (micStream) setupVisualizerSource(micStream);
-            if (voxAnalyserNode) monitorVoxLevel();
+            restoreVoxStandbyState();
           } else {
             voxAutoTriggered = false;
             if (voxHangTimeTimer) {
               clearTimeout(voxHangTimeTimer);
               voxHangTimeTimer = null;
+            }
+            if (voxAnimFrame) {
+              cancelAnimationFrame(voxAnimFrame);
+              voxAnimFrame = null;
             }
             showToast("VOX Nonaktif (Manual PTT)", "info");
           }
