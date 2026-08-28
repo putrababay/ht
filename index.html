@@ -604,9 +604,11 @@
         </div>
 
         <p class="text-[11px] text-gray-400 mb-3">
-          Pilih sumber audio untuk transmisi PTT. Gunakan
-          <strong class="text-purple-300">Speaker Perangkat</strong> untuk
-          mengambil suara langsung dari output speaker HP/PC.
+          Pilih sumber audio untuk transmisi PTT.
+          <strong class="text-purple-300">Speaker Perangkat</strong> =
+          PTT otomatis ON (relay audio), RX peer lain tetap aktif.
+          <strong class="text-emerald-300">Mic Internal</strong> = PTT gantian
+          (manual / VOX).
         </p>
 
         <div class="space-y-3 text-xs">
@@ -1145,6 +1147,78 @@
         return !!(el?.srcObject && !el.paused && !el.ended);
       }
 
+      function isSpeakerRelayMode() {
+        return micSourceMode === "speaker";
+      }
+
+      function setVoxToggleDisabled(disabled) {
+        const toggleVox = document.getElementById("toggle-vox");
+        if (!toggleVox) return;
+        toggleVox.disabled = disabled;
+        toggleVox.classList.toggle("opacity-50", disabled);
+        toggleVox.classList.toggle("cursor-not-allowed", disabled);
+        toggleVox.title = disabled
+          ? "VOX nonaktif saat mode Speaker (PTT otomatis)"
+          : "Voice Operated Transmit (VOX)";
+      }
+
+      function pauseSpeakerRelayForRx() {
+        if (!isTransmitting) return;
+        isTransmitting = false;
+        setTransmissionGain(false);
+        broadcastData({ type: "PTT_STOP" });
+      }
+
+      function resumeSpeakerRelayAfterRx() {
+        if (!speakerRelayActive || !isSpeakerRelayMode()) return;
+        if (isRemoteRxActive() || isTransmitting) return;
+        executePTTStart({ speakerRelay: true, quiet: true });
+      }
+
+      function startSpeakerRelay() {
+        if (!isSpeakerRelayMode() || appPoweredOff || !isMicStreamActive()) return;
+        speakerRelayActive = true;
+        if (isRemoteRxActive()) return;
+        if (isTransmitting) return;
+        executePTTStart({ speakerRelay: true });
+      }
+
+      function stopSpeakerRelay() {
+        speakerRelayActive = false;
+        if (!isTransmitting) return;
+        stopTransmitting(false, { force: true });
+      }
+
+      function applyMicSourceModeBehavior() {
+        if (isSpeakerRelayMode()) {
+          if (voxEnabled) {
+            voxEnabledBeforeSpeaker = true;
+            voxEnabled = false;
+            voxAutoTriggered = false;
+            if (voxHangTimeTimer) {
+              clearTimeout(voxHangTimeTimer);
+              voxHangTimeTimer = null;
+            }
+            if (voxAnimFrame) {
+              cancelAnimationFrame(voxAnimFrame);
+              voxAnimFrame = null;
+            }
+          }
+          setVoxToggleDisabled(true);
+          syncToolbarUiState();
+          startSpeakerRelay();
+        } else {
+          setVoxToggleDisabled(false);
+          if (voxEnabledBeforeSpeaker !== null) {
+            voxEnabled = voxEnabledBeforeSpeaker;
+            voxEnabledBeforeSpeaker = null;
+            syncToolbarUiState();
+          }
+          stopSpeakerRelay();
+          restoreVoxStandbyState();
+        }
+      }
+
       function restoreVoxStandbyState() {
         syncVoxUiState();
         if (appPoweredOff) return;
@@ -1185,7 +1259,12 @@
         rxHangTimeTimer = null;
         activeBroadcaster = null;
         playRogerBeep();
-        restoreVoxStandbyState();
+        if (isSpeakerRelayMode() && speakerRelayActive) {
+          resumeSpeakerRelayAfterRx();
+          if (micStream) setupVisualizerSource(micStream);
+        } else {
+          restoreVoxStandbyState();
+        }
       }
 
       function getAnalyserActivity(analyser, threshold = 6) {
@@ -1410,6 +1489,8 @@
       let micSourceMode = "internal";
       let selectedMicDeviceId = "";
       let speakerCaptureStream = null;
+      let speakerRelayActive = false;
+      let voxEnabledBeforeSpeaker = null;
 
       // Network Monitor State
       let networkMonitorInterval = null;
@@ -2157,7 +2238,7 @@
         localStorage.setItem(MIC_DEVICE_KEY, selectedMicDeviceId);
 
         const wasTransmitting = isTransmitting;
-        if (wasTransmitting) stopTransmitting();
+        if (wasTransmitting) stopTransmitting(false, { force: true });
 
         const ok = await setupMicrophone(true);
         if (!ok) {
@@ -2167,8 +2248,17 @@
 
         await replaceMicOnActiveCalls();
         updateMicStatusUI();
+        applyMicSourceModeBehavior();
         document.getElementById("modal-mic").classList.add("hidden");
-        showToast(`Mic: ${getMicSourceLabel()}`, "success");
+        const modeLabel = getMicSourceLabel();
+        if (isSpeakerRelayMode()) {
+          showToast(
+            `${modeLabel} — PTT otomatis ON. RX peer lain tetap aktif.`,
+            "success",
+          );
+        } else {
+          showToast(`Mic: ${modeLabel} — PTT gantian (manual/VOX).`, "success");
+        }
       }
 
       function setupMicSettingsListeners() {
@@ -2241,6 +2331,8 @@
             if (micSourceMode === "speaker") {
               micSourceMode = "internal";
               localStorage.setItem(MIC_SOURCE_KEY, "internal");
+              speakerRelayActive = false;
+              setVoxToggleDisabled(false);
               showToast(
                 "Capture speaker terputus. Mic kembali ke internal.",
                 "warning",
@@ -2257,6 +2349,7 @@
           setupVisualizerSource(micStream);
           setupVoxAnalyser(micStream);
           updateMicStatusUI();
+          if (appStarted) applyMicSourceModeBehavior();
           return true;
         } catch (err) {
           console.error("Gagal mengakses mikrofon:", err);
@@ -2409,10 +2502,6 @@
         if (appPoweredOff) return false;
 
         if (!isMicStreamActive()) {
-          if (micSourceMode === "speaker") {
-            micSourceMode = "internal";
-            localStorage.setItem(MIC_SOURCE_KEY, "internal");
-          }
           return setupMicrophone(true);
         }
 
@@ -2421,6 +2510,9 @@
           setupOutgoingAudioGraph(micStream);
           setupVisualizerSource(micStream);
           setupVoxAnalyser(micStream);
+        }
+        if (isSpeakerRelayMode() && speakerRelayActive && !isTransmitting && !isRemoteRxActive()) {
+          resumeSpeakerRelayAfterRx();
         }
         return true;
       }
@@ -2494,6 +2586,11 @@
         await releaseWakeLock();
         stopNetworkMonitor();
         updateNetworkQualityUI({ level: 0, traffic: "gray" }, 0, 0);
+        speakerRelayActive = false;
+        if (isTransmitting) {
+          isTransmitting = false;
+          setTransmissionGain(false);
+        }
         teardownConnections();
         releaseMicrophone();
 
@@ -2892,6 +2989,7 @@
         peer.on("open", (id) => {
           console.log("Connected to PeerServer with ID:", id);
           updateStatusDisplay("idle");
+          if (isSpeakerRelayMode()) startSpeakerRelay();
           discoverChannelPeers();
         });
 
@@ -3169,6 +3267,8 @@
         if (isTransmitting && voxAutoTriggered) {
           stopTransmitting(true);
           voxAutoTriggered = false;
+        } else if (isSpeakerRelayMode() && isTransmitting) {
+          pauseSpeakerRelayForRx();
         }
 
         isReceiving = true;
@@ -3191,6 +3291,7 @@
 
       // --- PTT Push-to-Talk Action Handlers ---
       function startTransmitting() {
+        if (isSpeakerRelayMode()) return;
         if (isTransmitting || isRemoteRxActive()) return;
         initAudioContext();
 
@@ -3203,29 +3304,34 @@
         executePTTStart();
       }
 
-      function executePTTStart() {
+      function executePTTStart({ speakerRelay = false, quiet = false } = {}) {
         isTransmitting = true;
+        if (speakerRelay || isSpeakerRelayMode()) {
+          speakerRelayActive = true;
+        }
 
         if (navigator.vibrate) navigator.vibrate(40);
 
-        playSquelchNoise(0.08);
+        if (!quiet) playSquelchNoise(0.08);
         updateStatusDisplay("transmitting");
 
         broadcastData({ type: "PTT_START", userName: myPeerId });
-        setTransmissionGain(true); // Open the audio gate to allow microphone streaming
+        setTransmissionGain(true);
 
         if (micStream) {
           setupVisualizerSource(micStream);
         }
       }
 
-      function stopTransmitting(fromVox = false) {
+      function stopTransmitting(fromVox = false, { force = false } = {}) {
         if (!isTransmitting) return;
+        if (speakerRelayActive && isSpeakerRelayMode() && !force) return;
 
         isTransmitting = false;
         setTransmissionGain(false);
 
         if (!fromVox) voxAutoTriggered = false;
+        if (force) speakerRelayActive = false;
         if (voxHangTimeTimer) {
           clearTimeout(voxHangTimeTimer);
           voxHangTimeTimer = null;
@@ -3253,9 +3359,11 @@
             txRxBadge.textContent = "TRANSMITTING";
             pttBtn.className =
               "w-40 h-40 rounded-full ptt-tx-active border-4 border-rose-400 flex flex-col items-center justify-center text-white shadow-2xl no-select cursor-pointer scale-95";
-            pttSubtext.textContent = voxAutoTriggered
-              ? "VOX OTOMATIS MENGIRIM..."
-              : "SEDANG MENGIRIM...";
+            pttSubtext.textContent = isSpeakerRelayMode()
+              ? "RELAY SPEAKER • PTT OTOMATIS"
+              : voxAutoTriggered
+                ? "VOX OTOMATIS MENGIRIM..."
+                : "SEDANG MENGIRIM...";
             break;
 
           case "receiving":
@@ -3269,7 +3377,9 @@
             txRxBadge.textContent = `RX: ${peerInfo}`;
             pttBtn.className =
               "w-40 h-40 rounded-full ptt-idle border-4 border-cyan-600 opacity-60 flex flex-col items-center justify-center text-gray-400 no-select cursor-not-allowed";
-            pttSubtext.textContent = "SALURAN SIBUK";
+            pttSubtext.textContent = isSpeakerRelayMode()
+              ? "RX AKTIF • RELAY JEDA SEMENTARA"
+              : "SALURAN SIBUK";
             break;
 
           case "idle":
@@ -3284,10 +3394,15 @@
             txRxBadge.textContent = "STANDBY";
             pttBtn.className =
               "w-40 h-40 rounded-full ptt-idle border-4 border-gray-700 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer";
-            pttSubtext.textContent = voxEnabled
-              ? "VOX AKTIF • OTOMATIS BICARA"
-              : "TAHAN UNTUK BICARA";
+            pttSubtext.textContent = isSpeakerRelayMode()
+              ? "RELAY SPEAKER • RX PEER AKTIF"
+              : voxEnabled
+                ? "VOX AKTIF • OTOMATIS BICARA"
+                : "TAHAN UNTUK BICARA";
             syncVoxUiState();
+            if (isSpeakerRelayMode() && speakerRelayActive && !isRemoteRxActive()) {
+              startSpeakerRelay();
+            }
             break;
         }
       }
@@ -3347,28 +3462,28 @@
         // PTT Button Events (Touch & Mouse)
         pttBtn.addEventListener("mousedown", (e) => {
           e.preventDefault();
-          startTransmitting();
+          if (!isSpeakerRelayMode()) startTransmitting();
         });
         pttBtn.addEventListener("mouseup", (e) => {
           e.preventDefault();
-          stopTransmitting();
+          if (!isSpeakerRelayMode()) stopTransmitting();
         });
         pttBtn.addEventListener("mouseleave", (e) => {
           e.preventDefault();
-          stopTransmitting();
+          if (!isSpeakerRelayMode()) stopTransmitting();
         });
 
         pttBtn.addEventListener("touchstart", (e) => {
           e.preventDefault();
-          startTransmitting();
+          if (!isSpeakerRelayMode()) startTransmitting();
         });
         pttBtn.addEventListener("touchend", (e) => {
           e.preventDefault();
-          stopTransmitting();
+          if (!isSpeakerRelayMode()) stopTransmitting();
         });
         pttBtn.addEventListener("touchcancel", (e) => {
           e.preventDefault();
-          stopTransmitting();
+          if (!isSpeakerRelayMode()) stopTransmitting();
         });
 
         // Prevent mobile context menu on long press
@@ -3385,7 +3500,7 @@
             document.activeElement.tagName !== "SELECT"
           ) {
             e.preventDefault();
-            startTransmitting();
+            if (!isSpeakerRelayMode()) startTransmitting();
           }
         });
 
@@ -3396,12 +3511,13 @@
             document.activeElement.tagName !== "SELECT"
           ) {
             e.preventDefault();
-            stopTransmitting();
+            if (!isSpeakerRelayMode()) stopTransmitting();
           }
         });
 
-        // Handle window blur — hanya hentikan PTT manual, bukan VOX
+        // Handle window blur — hanya hentikan PTT manual, bukan VOX / relay speaker
         window.addEventListener("blur", () => {
+          if (isSpeakerRelayMode()) return;
           if (isTransmitting && !voxAutoTriggered) {
             stopTransmitting();
           }
@@ -3422,6 +3538,13 @@
 
         // VOX Auto Transmit Toggle
         document.getElementById("toggle-vox").addEventListener("click", () => {
+          if (isSpeakerRelayMode()) {
+            showToast(
+              "VOX tidak tersedia di mode Speaker. Pilih mic internal untuk PTT gantian.",
+              "info",
+            );
+            return;
+          }
           voxEnabled = !voxEnabled;
           syncVoxUiState();
           persistAppCache();
@@ -3634,9 +3757,10 @@
 
         setBootProgress(100, "Sistem siap!");
         hideBootOverlay();
-        if (micStream) {
+        applyMicSourceModeBehavior();
+        if (micStream && !isSpeakerRelayMode()) {
           setupVisualizerSource(micStream);
-        } else {
+        } else if (!micStream) {
           startVisualizerLoop();
         }
       }
@@ -3729,6 +3853,7 @@
 
         micSourceMode = localStorage.getItem(MIC_SOURCE_KEY) || "internal";
         selectedMicDeviceId = localStorage.getItem(MIC_DEVICE_KEY) || "";
+        if (isSpeakerRelayMode()) setVoxToggleDisabled(true);
 
         setBootProgress(15, "Memuat cache pengaturan...");
         applyAppCache();
