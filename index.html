@@ -457,7 +457,7 @@
             id="btn-open-mic"
             type="button"
             class="ht-toolbar-btn ht-toolbar-btn--mic"
-            title="Pengaturan mikrofon"
+            title="Mikrofon"
           >
             <i class="fa-solid fa-microphone" aria-hidden="true"></i>
             <span class="ht-toolbar-text">MIC</span>
@@ -1141,10 +1141,16 @@
       }
 
       function isRemoteRxActive() {
-        if (isReceiving) return true;
-        if (!activeBroadcaster) return false;
-        const el = remoteAudioElements.get(activeBroadcaster);
-        return !!(el?.srcObject && !el.paused && !el.ended);
+        // Hanya andalkan flag PTT sinyal — stream WebRTC selalu "playing"
+        // meski peer sudah lepas PTT (gain 0), jadi cek audio element menyesatkan.
+        return !!(isReceiving && activeBroadcaster);
+      }
+
+      function isMobileDevice() {
+        if (window.matchMedia("(pointer: coarse)").matches) return true;
+        return /android|iphone|ipad|ipod|mobile|windows phone/i.test(
+          navigator.userAgent || "",
+        );
       }
 
       function isSpeakerRelayMode() {
@@ -1247,18 +1253,18 @@
       function finalizePeerRxEnd(peerId) {
         if (activeBroadcaster !== peerId && activeBroadcaster !== null) return;
 
-        isReceiving = false;
-        updateStatusDisplay("idle");
-        syncVoxUiState();
-
-        if (isRemoteRxActive()) {
-          rxHangTimeTimer = setTimeout(() => finalizePeerRxEnd(peerId), 250);
-          return;
+        if (rxHangTimeTimer) {
+          clearTimeout(rxHangTimeTimer);
+          rxHangTimeTimer = null;
         }
 
-        rxHangTimeTimer = null;
+        isReceiving = false;
         activeBroadcaster = null;
         playRogerBeep();
+        updateStatusDisplay("idle");
+        updatePeersListUI();
+        syncVoxUiState();
+
         if (isSpeakerRelayMode() && speakerRelayActive) {
           resumeSpeakerRelayAfterRx();
           if (micStream) setupVisualizerSource(micStream);
@@ -1869,7 +1875,12 @@
           isReceiving = false;
           activeBroadcaster = null;
           updateStatusDisplay("idle");
-          restoreVoxStandbyState();
+          if (isSpeakerRelayMode() && speakerRelayActive) {
+            resumeSpeakerRelayAfterRx();
+            if (micStream) setupVisualizerSource(micStream);
+          } else {
+            restoreVoxStandbyState();
+          }
         }
 
         updatePeersListUI();
@@ -2222,6 +2233,37 @@
         document.getElementById("modal-mic").classList.remove("hidden");
       }
 
+      /** Ponsel: langsung aktifkan mic internal. Desktop: buka modal pengaturan. */
+      async function handleMicToolbarClick() {
+        if (isMobileDevice()) {
+          // Paksa mode mikrofon internal di ponsel (bukan speaker relay)
+          if (micSourceMode !== "internal") {
+            micSourceMode = "internal";
+            selectedMicDeviceId = "";
+            localStorage.setItem(MIC_SOURCE_KEY, "internal");
+            localStorage.setItem(MIC_DEVICE_KEY, "");
+            speakerRelayActive = false;
+            if (isTransmitting) stopTransmitting(false, { force: true });
+          }
+
+          const ok = await setupMicrophone(true);
+          if (!ok) {
+            showToast(
+              "Izin mikrofon diperlukan. Aktifkan di pengaturan browser.",
+              "warning",
+            );
+            return;
+          }
+          await replaceMicOnActiveCalls();
+          applyMicSourceModeBehavior();
+          updateMicStatusUI();
+          showToast("Mikrofon siap — tahan PTT untuk bicara.", "success");
+          return;
+        }
+
+        await openMicSettingsModal();
+      }
+
       async function saveMicSettings() {
         const selectedMode = document.querySelector(
           'input[name="mic-source-mode"]:checked',
@@ -2263,7 +2305,7 @@
 
       function setupMicSettingsListeners() {
         document.getElementById("btn-open-mic")?.addEventListener("click", () => {
-          openMicSettingsModal();
+          handleMicToolbarClick();
         });
         document.getElementById("btn-close-mic")?.addEventListener("click", () => {
           document.getElementById("modal-mic").classList.add("hidden");
@@ -3285,8 +3327,10 @@
       }
 
       function handlePeerStoppedTalking(peerId) {
+        if (activeBroadcaster && activeBroadcaster !== peerId) return;
         if (rxHangTimeTimer) clearTimeout(rxHangTimeTimer);
-        rxHangTimeTimer = setTimeout(() => finalizePeerRxEnd(peerId), 1200);
+        // Hang singkat agar trailing audio/roger tidak terpotong, lalu lepas RX pasti
+        rxHangTimeTimer = setTimeout(() => finalizePeerRxEnd(peerId), 600);
       }
 
       // --- PTT Push-to-Talk Action Handlers ---
@@ -3860,6 +3904,13 @@
 
         micSourceMode = localStorage.getItem(MIC_SOURCE_KEY) || "internal";
         selectedMicDeviceId = localStorage.getItem(MIC_DEVICE_KEY) || "";
+        // Ponsel selalu default mikrofon internal (PTT manual), bukan speaker relay
+        if (isMobileDevice() && micSourceMode === "speaker") {
+          micSourceMode = "internal";
+          selectedMicDeviceId = "";
+          localStorage.setItem(MIC_SOURCE_KEY, "internal");
+          localStorage.setItem(MIC_DEVICE_KEY, "");
+        }
         if (isSpeakerRelayMode()) setVoxToggleDisabled(true);
 
         setBootProgress(15, "Memuat cache pengaturan...");
