@@ -119,12 +119,70 @@
         -webkit-user-drag: none;
       }
 
-      /* Toolbar satu baris — 4 tombol dinamis */
+      .ptt-dual-grid {
+        display: none;
+        width: 100%;
+        max-width: 20rem;
+        gap: 0.75rem;
+      }
+
+      .ptt-dual-grid.is-active {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      #ptt-single-wrap.is-hidden {
+        display: none;
+      }
+
+      .ptt-slot-btn {
+        width: 100%;
+        aspect-ratio: 1;
+        max-width: 9.5rem;
+        margin: 0 auto;
+        border-radius: 9999px;
+      }
+
+      .ptt-slot-label {
+        font-size: 9px;
+        font-family: "Courier New", Courier, monospace;
+        color: rgb(252 211 77);
+        margin-bottom: 0.15rem;
+        letter-spacing: 0.05em;
+      }
+
+      .ptt-slot-btn.ptt-tx-active {
+        animation: none;
+      }
+
+      #dual-mode-badge {
+        display: none;
+      }
+
+      #dual-mode-badge.is-active {
+        display: inline;
+      }
+
+      /* Toolbar — 4 tombol di ponsel (MIC disembunyikan, REACT menggantikan), 5 di desktop */
       .ht-toolbar {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 0.25rem;
         width: 100%;
+      }
+
+      #btn-open-mic {
+        display: none;
+      }
+
+      @media (min-width: 640px) {
+        .ht-toolbar {
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+
+        #btn-open-mic {
+          display: flex;
+        }
       }
 
       .ht-toolbar-btn {
@@ -215,6 +273,126 @@
         background-color: rgb(59 7 100);
         border-color: rgb(107 33 168);
         color: rgb(216 180 254);
+      }
+
+      .ht-toolbar-btn--emoji {
+        background-color: rgb(69 26 3);
+        border-color: rgb(180 83 9);
+        color: rgb(252 211 77);
+      }
+
+      /* Reaksi emoji mengambang — terlihat semua operator */
+      #reaction-overlay {
+        position: fixed;
+        top: 38%;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 45;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.35rem;
+        width: min(100%, 300px);
+      }
+
+      .ht-reaction-bubble {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        opacity: 0;
+        transform: translateY(16px) scale(0.75);
+      }
+
+      .ht-reaction-bubble--animate {
+        animation: ht-reaction-float 2.8s ease-out forwards;
+      }
+
+      .ht-reaction-bubble--self .ht-reaction-name {
+        border-color: rgb(52 211 153);
+        color: rgb(110 231 183);
+      }
+
+      @keyframes ht-reaction-float {
+        0% {
+          opacity: 0;
+          transform: translateY(16px) scale(0.75);
+        }
+        12% {
+          opacity: 1;
+          transform: translateY(-8px) scale(1.08);
+        }
+        75% {
+          opacity: 1;
+          transform: translateY(-72px) scale(1.05);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-110px) scale(0.92);
+        }
+      }
+
+      .ht-reaction-emoji {
+        font-size: 3.25rem;
+        line-height: 1;
+        filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.55));
+      }
+
+      .ht-reaction-name {
+        margin-top: 0.25rem;
+        font-size: 10px;
+        font-family: "Courier New", Courier, monospace;
+        font-weight: 700;
+        color: rgb(252 211 77);
+        background: rgba(3, 7, 18, 0.88);
+        padding: 0.15rem 0.55rem;
+        border-radius: 9999px;
+        border: 1px solid rgb(217 119 6);
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .ht-emoji-pick {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.15rem;
+        padding: 0.45rem 0.2rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgb(55 65 81);
+        background: rgb(3 7 18);
+        transition:
+          transform 0.12s,
+          border-color 0.12s,
+          background-color 0.12s;
+      }
+
+      .ht-emoji-pick:hover,
+      .ht-emoji-pick:focus-visible {
+        border-color: rgb(217 119 6);
+        background: rgb(69 26 3 / 0.45);
+        transform: scale(1.04);
+        outline: none;
+      }
+
+      .ht-emoji-pick:active {
+        transform: scale(0.96);
+      }
+
+      .ht-emoji-pick-char {
+        font-size: 1.65rem;
+        line-height: 1;
+      }
+
+      .ht-emoji-pick-label {
+        font-size: 9px;
+        font-family: "Courier New", Courier, monospace;
+        color: rgb(156 163 175);
+        text-align: center;
+        line-height: 1.1;
       }
     </style>
   </head>
@@ -314,8 +492,13 @@
               </span>
             </div>
             <div class="flex items-center space-x-2">
-              <span
-                id="vox-badge"
+            <span
+              id="dual-mode-badge"
+              class="px-1.5 py-0.5 rounded text-[10px] bg-sky-950 text-sky-300 font-bold border border-sky-700"
+              >DUAL</span
+            >
+            <span
+              id="vox-badge"
                 class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-950 text-gray-500 font-bold border border-emerald-900"
                 >VOX OFF</span
               >
@@ -383,7 +566,14 @@
             class="text-[10px] text-gray-400 font-semibold uppercase flex justify-between mb-1.5"
           >
             <span>Saluran &amp; Frekuensi PMR</span>
-            <span class="text-amber-400 font-mono">16 CH</span>
+            <button
+              id="btn-open-dual"
+              type="button"
+              class="text-sky-400 hover:text-sky-300 font-mono normal-case tracking-normal"
+              title="Pengaturan dual saluran"
+            >
+              <i class="fa-solid fa-layer-group mr-0.5"></i>Dual
+            </button>
           </label>
           <div class="flex items-center space-x-1">
             <button
@@ -462,6 +652,16 @@
             <i class="fa-solid fa-microphone" aria-hidden="true"></i>
             <span class="ht-toolbar-text">MIC</span>
           </button>
+
+          <button
+            id="btn-open-emoji"
+            type="button"
+            class="ht-toolbar-btn ht-toolbar-btn--emoji"
+            title="Reaksi emoji saluran"
+          >
+            <i class="fa-solid fa-face-smile" aria-hidden="true"></i>
+            <span class="ht-toolbar-text">REACT</span>
+          </button>
         </div>
 
         <!-- VOX Sensitivity Slider & Level Meter (Hidden by default until VOX ON) -->
@@ -506,7 +706,7 @@
       <div
         class="p-6 bg-gray-950 flex flex-col items-center justify-center relative border-t border-gray-800"
       >
-        <p class="text-xs text-gray-400 mb-3 text-center font-medium">
+        <p id="ptt-hint-single" class="text-xs text-gray-400 mb-3 text-center font-medium">
           Tahan tombol di bawah atau tekan
           <kbd
             class="px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded text-amber-400"
@@ -519,22 +719,79 @@
           >
           untuk bicara
         </p>
-
-        <!-- PTT Big Radial Button -->
-        <button
-          id="ptt-button"
-          class="w-40 h-40 rounded-full ptt-idle border-4 border-gray-700 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer"
+        <p
+          id="ptt-hint-dual"
+          class="hidden text-xs text-gray-400 mb-3 text-center font-medium"
         >
-          <i class="fa-solid fa-microphone text-3xl mb-1 text-amber-500"></i>
-          <span class="font-extrabold text-base tracking-wider"
-            >PUSH TO TALK</span
+          Dual saluran aktif —
+          <kbd class="px-1 py-0.5 bg-gray-800 border border-gray-700 rounded text-amber-400"
+            >Space</kbd
           >
-          <span
-            id="ptt-subtext"
-            class="text-[10px] text-gray-400 font-mono mt-0.5"
-            >TAHAN UNTUK BICARA</span
+          = PTT A,
+          <kbd class="px-1 py-0.5 bg-gray-800 border border-gray-700 rounded text-sky-400"
+            >T</kbd
           >
-        </button>
+          = PTT B
+        </p>
+
+        <!-- PTT Single -->
+        <div id="ptt-single-wrap">
+          <button
+            id="ptt-button"
+            class="w-40 h-40 rounded-full ptt-idle border-4 border-gray-700 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer"
+          >
+            <i class="fa-solid fa-microphone text-3xl mb-1 text-amber-500"></i>
+            <span class="font-extrabold text-base tracking-wider"
+              >PUSH TO TALK</span
+            >
+            <span
+              id="ptt-subtext"
+              class="text-[10px] text-gray-400 font-mono mt-0.5"
+              >TAHAN UNTUK BICARA</span
+            >
+          </button>
+        </div>
+
+        <!-- PTT Dual (2 saluran) -->
+        <div id="ptt-dual-wrap" class="ptt-dual-grid">
+          <div class="flex flex-col items-center">
+            <span id="ptt-label-a" class="ptt-slot-label">PTT A · CH 01</span>
+            <button
+              id="ptt-button-a"
+              type="button"
+              data-slot="A"
+              class="ptt-slot-btn ptt-idle border-4 border-gray-700 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer"
+            >
+              <i class="fa-solid fa-microphone text-2xl mb-1 text-amber-500"></i>
+              <span class="font-extrabold text-xs tracking-wide">PTT A</span>
+              <span
+                id="ptt-subtext-a"
+                class="text-[9px] text-gray-400 font-mono mt-0.5 text-center px-1"
+                >TAHAN</span
+              >
+            </button>
+          </div>
+          <div class="flex flex-col items-center">
+            <span id="ptt-label-b" class="ptt-slot-label">PTT B · CH 02</span>
+            <button
+              id="ptt-button-b"
+              type="button"
+              data-slot="B"
+              class="ptt-slot-btn ptt-idle border-4 border-sky-800 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer"
+            >
+              <i class="fa-solid fa-microphone text-2xl mb-1 text-sky-400"></i>
+              <span class="font-extrabold text-xs tracking-wide">PTT B</span>
+              <span
+                id="ptt-subtext-b"
+                class="text-[9px] text-gray-400 font-mono mt-0.5 text-center px-1"
+                >TAHAN</span
+              >
+            </button>
+          </div>
+        </div>
+
+        <!-- legacy anchor removed below -->
+        <span id="ptt-legacy-anchor" class="hidden"></span>
 
         <div
           id="mic-warning"
@@ -707,6 +964,119 @@
             <i class="fa-solid fa-check mr-1"></i> Terapkan
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Dual Channel Settings Modal -->
+    <div
+      id="modal-dual"
+      class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[56] flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-gray-900 border border-sky-700/60 rounded-2xl w-full max-w-sm p-4 text-gray-200 shadow-2xl"
+      >
+        <div
+          class="flex justify-between items-center border-b border-gray-800 pb-2 mb-3"
+        >
+          <h3
+            class="font-bold text-sky-400 text-sm flex items-center space-x-2"
+          >
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Dual Saluran</span>
+          </h3>
+          <button
+            id="btn-close-dual"
+            type="button"
+            class="text-gray-400 hover:text-white font-bold text-lg leading-none"
+          >
+            &times;
+          </button>
+        </div>
+
+        <p class="text-[11px] text-gray-400 mb-3">
+          Aktifkan dua saluran sekaligus dengan dua tombol PTT terpisah. Saluran
+          utama (dropdown) = <strong class="text-amber-300">PTT A</strong>,
+          saluran B = <strong class="text-sky-300">PTT B</strong>.
+        </p>
+
+        <label
+          class="flex items-center space-x-2 p-2.5 rounded-lg border border-gray-800 bg-gray-950 cursor-pointer hover:border-sky-700 has-[:checked]:border-sky-600 has-[:checked]:bg-sky-950/30 mb-3"
+        >
+          <input
+            id="toggle-dual-channel"
+            type="checkbox"
+            class="accent-sky-500"
+          />
+          <div>
+            <span class="font-bold text-gray-200 text-xs">Mode Dual Saluran</span>
+            <p class="text-[10px] text-gray-500">
+              Monitor &amp; PTT dua frekuensi bersamaan
+            </p>
+          </div>
+        </label>
+
+        <div id="dual-slot-b-panel" class="hidden space-y-1.5">
+          <label
+            class="block text-[10px] font-mono text-gray-400 uppercase"
+            for="dual-channel-b-select"
+            >Saluran PTT B</label
+          >
+          <select
+            id="dual-channel-b-select"
+            class="w-full bg-gray-950 border border-gray-700 rounded px-2.5 py-1.5 text-sky-300 font-mono text-xs focus:outline-none focus:border-sky-500"
+          ></select>
+        </div>
+
+        <div
+          id="dual-current-status"
+          class="text-[10px] font-mono text-gray-500 bg-gray-950 p-2 rounded border border-gray-800 mt-3"
+        >
+          Mode: Saluran tunggal
+        </div>
+
+        <div class="flex space-x-2 mt-4">
+          <button
+            id="btn-save-dual"
+            type="button"
+            class="flex-1 bg-sky-700 hover:bg-sky-600 text-white font-bold text-xs py-2 rounded-lg border border-sky-600"
+          >
+            <i class="fa-solid fa-check mr-1"></i> Terapkan
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Emoji Reaction Popup -->
+    <div
+      id="modal-emoji"
+      class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[55] flex items-end sm:items-center justify-center p-3 sm:p-4"
+    >
+      <div
+        class="bg-gray-900 border border-amber-700/60 rounded-2xl w-full max-w-sm p-4 text-gray-200 shadow-2xl"
+      >
+        <div
+          class="flex justify-between items-center border-b border-gray-800 pb-2 mb-3"
+        >
+          <h3
+            class="font-bold text-amber-400 text-sm flex items-center space-x-2"
+          >
+            <i class="fa-solid fa-face-smile"></i>
+            <span>Reaksi Saluran</span>
+          </h3>
+          <button
+            id="btn-close-emoji"
+            type="button"
+            class="text-gray-400 hover:text-white font-bold text-lg leading-none"
+          >
+            &times;
+          </button>
+        </div>
+
+        <p class="text-[11px] text-gray-400 mb-3">
+          Kirim reaksi cepat — tampil di semua operator aktif di saluran ini.
+        </p>
+
+        <div id="emoji-picker-grid" class="grid grid-cols-4 gap-2"></div>
       </div>
     </div>
 
@@ -920,6 +1290,8 @@
       </div>
     </div>
 
+    <div id="reaction-overlay" aria-live="polite"></div>
+
     <div
       id="toast-container"
       class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center space-y-2 pointer-events-none"
@@ -946,6 +1318,25 @@
         { ch: 15, freq: "446.18125 MHz" },
         { ch: 16, freq: "446.19375 MHz" },
       ];
+
+      // Reaksi emoji walkie-talkie — cocok untuk komunikasi HT
+      const HT_REACTIONS = [
+        { id: "ok", emoji: "👍", label: "Siap / Copy" },
+        { id: "wave", emoji: "👋", label: "Salam / Over" },
+        { id: "listen", emoji: "👂", label: "Mendengar" },
+        { id: "wait", emoji: "⏳", label: "Tunggu" },
+        { id: "eyes", emoji: "👀", label: "Perhatian" },
+        { id: "signal", emoji: "📡", label: "QSL / Sinyal" },
+        { id: "warn", emoji: "⚠️", label: "Hati-hati" },
+        { id: "sos", emoji: "🆘", label: "SOS" },
+        { id: "emergency", emoji: "🚨", label: "Darurat" },
+        { id: "lol", emoji: "😂", label: "Lucu" },
+        { id: "thanks", emoji: "🙏", label: "Terima kasih" },
+        { id: "no", emoji: "👎", label: "Tolak" },
+      ];
+      const REACTION_COOLDOWN_MS = 1500;
+      let lastReactionSentAt = 0;
+      let activeReactionCount = 0;
 
       // --- State Variables ---
       let currentChannelIdx = 0;
@@ -1003,6 +1394,157 @@
       let voxAutoTriggered = false;
       let rxHangTimeTimer = null;
 
+      // Dual saluran — slot B terpisah; slot A = proxy ke variabel global
+      let dualChannelEnabled = false;
+      let slotBChannelIdx = 1;
+      let activeTxSlot = null;
+      let pttBtnA, pttBtnB, pttSubtextA, pttSubtextB;
+
+      const slotB = {
+        id: "B",
+        channelIdx: 1,
+        roomName: "PMR-CH-2",
+        peer: null,
+        myPeerId: "",
+        dataConnections: new Map(),
+        activeCalls: new Map(),
+        connectedPeersInfo: new Set(),
+        peerNames: new Map(),
+        peerPresence: new Map(),
+        notifiedJoinPeers: new Set(),
+        remoteAudioElements: new Map(),
+        activeBroadcaster: null,
+        isReceiving: false,
+        isTransmitting: false,
+        rxHangTimeTimer: null,
+        channelBroadcast: null,
+        mqttClient: null,
+        heartbeatInterval: null,
+      };
+
+      const slotAProxy = {
+        id: "A",
+        get channelIdx() {
+          return currentChannelIdx;
+        },
+        set channelIdx(v) {
+          currentChannelIdx = v;
+        },
+        get roomName() {
+          return roomName;
+        },
+        set roomName(v) {
+          roomName = v;
+        },
+        get peer() {
+          return peer;
+        },
+        set peer(v) {
+          peer = v;
+        },
+        get myPeerId() {
+          return myPeerId;
+        },
+        set myPeerId(v) {
+          myPeerId = v;
+        },
+        get dataConnections() {
+          return dataConnections;
+        },
+        get activeCalls() {
+          return activeCalls;
+        },
+        get connectedPeersInfo() {
+          return connectedPeersInfo;
+        },
+        get peerNames() {
+          return peerNames;
+        },
+        get peerPresence() {
+          return peerPresence;
+        },
+        get notifiedJoinPeers() {
+          return notifiedJoinPeers;
+        },
+        get remoteAudioElements() {
+          return remoteAudioElements;
+        },
+        get activeBroadcaster() {
+          return activeBroadcaster;
+        },
+        set activeBroadcaster(v) {
+          activeBroadcaster = v;
+        },
+        get isReceiving() {
+          return isReceiving;
+        },
+        set isReceiving(v) {
+          isReceiving = v;
+        },
+        get isTransmitting() {
+          return isTransmitting;
+        },
+        set isTransmitting(v) {
+          isTransmitting = v;
+        },
+        get rxHangTimeTimer() {
+          return rxHangTimeTimer;
+        },
+        set rxHangTimeTimer(v) {
+          rxHangTimeTimer = v;
+        },
+        get channelBroadcast() {
+          return channelBroadcast;
+        },
+        set channelBroadcast(v) {
+          channelBroadcast = v;
+        },
+        get mqttClient() {
+          return mqttClient;
+        },
+        set mqttClient(v) {
+          mqttClient = v;
+        },
+        get heartbeatInterval() {
+          return heartbeatInterval;
+        },
+        set heartbeatInterval(v) {
+          heartbeatInterval = v;
+        },
+      };
+
+      function getSlot(slotId = "A") {
+        return slotId === "B" ? slotB : slotAProxy;
+      }
+
+      function getActiveSlotIds() {
+        return dualChannelEnabled ? ["A", "B"] : ["A"];
+      }
+
+      function isAnySlotTransmitting() {
+        return getActiveSlotIds().some((id) => getSlot(id).isTransmitting);
+      }
+
+      function getSlotChannelLabel(slotId) {
+        const slot = getSlot(slotId);
+        const ch = PMR_CHANNELS[slot.channelIdx];
+        if (!ch) return slotId;
+        const num = ch.ch < 10 ? `0${ch.ch}` : `${ch.ch}`;
+        return `CH ${num}`;
+      }
+
+      function syncSlotBRoomFromIdx() {
+        const ch = PMR_CHANNELS[slotBChannelIdx];
+        if (ch) slotB.roomName = `PMR-CH-${ch.ch}`;
+      }
+
+      function getMqttTopicForSlot(slotId) {
+        const sanitizedRoom = getSlot(slotId).roomName
+          .toUpperCase()
+          .replace(/[^A-Z0-9]/g, "");
+        return `ht_walkie_talkie_v2/room/${sanitizedRoom}`;
+      }
+
       // PWA Configuration
       const PWA_ORIGIN = "https://ptt.sibag.us";
       const APP_CACHE_KEY = "ptt_sibagus_cache";
@@ -1033,6 +1575,8 @@
       function persistAppCache() {
         saveAppCache({
           channelIdx: currentChannelIdx,
+          slotBChannelIdx,
+          dualChannelEnabled,
           voxEnabled,
           voxThreshold,
           audioFilterEnabled,
@@ -1052,6 +1596,23 @@
           roomName = `PMR-CH-${ch.ch}`;
           updateChannelDisplayUI(ch);
         }
+        if (
+          typeof cache.slotBChannelIdx === "number" &&
+          cache.slotBChannelIdx >= 0 &&
+          cache.slotBChannelIdx < PMR_CHANNELS.length
+        ) {
+          slotBChannelIdx = cache.slotBChannelIdx;
+          slotB.channelIdx = slotBChannelIdx;
+          syncSlotBRoomFromIdx();
+        }
+        if (typeof cache.dualChannelEnabled === "boolean") {
+          dualChannelEnabled = cache.dualChannelEnabled;
+        }
+        if (dualChannelEnabled && slotBChannelIdx === currentChannelIdx) {
+          slotBChannelIdx = (currentChannelIdx + 1) % PMR_CHANNELS.length;
+          slotB.channelIdx = slotBChannelIdx;
+          syncSlotBRoomFromIdx();
+        }
         if (typeof cache.voxEnabled === "boolean") voxEnabled = cache.voxEnabled;
         if (typeof cache.voxThreshold === "number") {
           voxThreshold = Math.min(90, Math.max(5, cache.voxThreshold));
@@ -1063,6 +1624,7 @@
           soundFxEnabled = cache.soundFxEnabled;
         }
         applyCachedSettingsUI();
+        syncDualUiMode();
       }
 
       function getAssetPath(file) {
@@ -1140,10 +1702,12 @@
         syncToolbarUiState();
       }
 
-      function isRemoteRxActive() {
-        // Hanya andalkan flag PTT sinyal — stream WebRTC selalu "playing"
-        // meski peer sudah lepas PTT (gain 0), jadi cek audio element menyesatkan.
-        return !!(isReceiving && activeBroadcaster);
+      function isRemoteRxActive(slotId = null) {
+        if (slotId) {
+          const slot = getSlot(slotId);
+          return !!(slot.isReceiving && slot.activeBroadcaster);
+        }
+        return getActiveSlotIds().some((id) => isRemoteRxActive(id));
       }
 
       function isMobileDevice() {
@@ -1170,29 +1734,27 @@
 
       function pauseSpeakerRelayForRx() {
         if (!isTransmitting) return;
-        isTransmitting = false;
-        setTransmissionGain(false);
-        broadcastData({ type: "PTT_STOP" });
+        stopTransmitting(false, { force: true }, "A");
       }
 
       function resumeSpeakerRelayAfterRx() {
         if (!speakerRelayActive || !isSpeakerRelayMode()) return;
-        if (isRemoteRxActive() || isTransmitting) return;
-        executePTTStart({ speakerRelay: true, quiet: true });
+        if (isRemoteRxActive("A") || isTransmitting) return;
+        executePTTStart({ speakerRelay: true, quiet: true, slotId: "A" });
       }
 
       function startSpeakerRelay() {
         if (!isSpeakerRelayMode() || appPoweredOff || !isMicStreamActive()) return;
         speakerRelayActive = true;
-        if (isRemoteRxActive()) return;
+        if (isRemoteRxActive("A")) return;
         if (isTransmitting) return;
-        executePTTStart({ speakerRelay: true });
+        executePTTStart({ speakerRelay: true, slotId: "A" });
       }
 
       function stopSpeakerRelay() {
         speakerRelayActive = false;
         if (!isTransmitting) return;
-        stopTransmitting(false, { force: true });
+        stopTransmitting(false, { force: true }, "A");
       }
 
       function applyMicSourceModeBehavior() {
@@ -1250,25 +1812,26 @@
         }
       }
 
-      function finalizePeerRxEnd(peerId) {
-        if (activeBroadcaster !== peerId && activeBroadcaster !== null) return;
+      function finalizePeerRxEnd(peerId, slotId = "A") {
+        const slot = getSlot(slotId);
+        if (slot.activeBroadcaster !== peerId && slot.activeBroadcaster !== null) return;
 
-        if (rxHangTimeTimer) {
-          clearTimeout(rxHangTimeTimer);
-          rxHangTimeTimer = null;
+        if (slot.rxHangTimeTimer) {
+          clearTimeout(slot.rxHangTimeTimer);
+          slot.rxHangTimeTimer = null;
         }
 
-        isReceiving = false;
-        activeBroadcaster = null;
+        slot.isReceiving = false;
+        slot.activeBroadcaster = null;
         playRogerBeep();
-        updateStatusDisplay("idle");
+        updateCombinedStatus();
         updatePeersListUI();
         syncVoxUiState();
 
-        if (isSpeakerRelayMode() && speakerRelayActive) {
+        if (slotId === "A" && isSpeakerRelayMode() && speakerRelayActive) {
           resumeSpeakerRelayAfterRx();
           if (micStream) setupVisualizerSource(micStream);
-        } else {
+        } else if (!isAnySlotTransmitting() && !isRemoteRxActive()) {
           restoreVoxStandbyState();
         }
       }
@@ -1600,32 +2163,35 @@
         let packetsLost = 0;
         let packetsReceived = 0;
 
-        for (const call of activeCalls.values()) {
-          const pc = call.peerConnection || call._pc;
-          if (!pc || pc.connectionState === "closed") continue;
+        for (const slotId of getActiveSlotIds()) {
+          const slot = getSlot(slotId);
+          for (const call of slot.activeCalls.values()) {
+            const pc = call.peerConnection || call._pc;
+            if (!pc || pc.connectionState === "closed") continue;
 
-          try {
-            const stats = await pc.getStats();
-            stats.forEach((report) => {
-              if (
-                report.type === "candidate-pair" &&
-                (report.state === "succeeded" || report.nominated)
-              ) {
-                if (report.currentRoundTripTime != null) {
-                  rtt = Math.max(rtt || 0, report.currentRoundTripTime * 1000);
+            try {
+              const stats = await pc.getStats();
+              stats.forEach((report) => {
+                if (
+                  report.type === "candidate-pair" &&
+                  (report.state === "succeeded" || report.nominated)
+                ) {
+                  if (report.currentRoundTripTime != null) {
+                    rtt = Math.max(rtt || 0, report.currentRoundTripTime * 1000);
+                  }
                 }
-              }
-              if (report.type === "inbound-rtp" && report.kind === "audio") {
-                totalRx += report.bytesReceived || 0;
-                packetsLost += report.packetsLost || 0;
-                packetsReceived += report.packetsReceived || 0;
-              }
-              if (report.type === "outbound-rtp" && report.kind === "audio") {
-                totalTx += report.bytesSent || 0;
-              }
-            });
-          } catch (e) {
-            console.warn("Gagal membaca WebRTC stats:", e);
+                if (report.type === "inbound-rtp" && report.kind === "audio") {
+                  totalRx += report.bytesReceived || 0;
+                  packetsLost += report.packetsLost || 0;
+                  packetsReceived += report.packetsReceived || 0;
+                }
+                if (report.type === "outbound-rtp" && report.kind === "audio") {
+                  totalTx += report.bytesSent || 0;
+                }
+              });
+            } catch (e) {
+              console.warn("Gagal membaca WebRTC stats:", e);
+            }
           }
         }
 
@@ -1742,9 +2308,112 @@
         }, 3500);
       }
 
-      function getPeerDisplayName(peerId) {
-        if (peerNames.has(peerId)) return peerNames.get(peerId);
+      function getPeerDisplayName(peerId, slotId = "A") {
+        const slot = getSlot(slotId);
+        if (slot.peerNames.has(peerId)) return slot.peerNames.get(peerId);
         return peerId.substring(peerId.lastIndexOf("-") + 1);
+      }
+
+      function populateEmojiPicker() {
+        const grid = document.getElementById("emoji-picker-grid");
+        if (!grid) return;
+        grid.innerHTML = "";
+
+        HT_REACTIONS.forEach((reaction) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "ht-emoji-pick";
+          btn.title = reaction.label;
+          btn.dataset.reactionId = reaction.id;
+          btn.innerHTML = `<span class="ht-emoji-pick-char">${reaction.emoji}</span><span class="ht-emoji-pick-label">${reaction.label}</span>`;
+          btn.addEventListener("click", () => sendReaction(reaction.id));
+          grid.appendChild(btn);
+        });
+      }
+
+      function openEmojiPopup() {
+        populateEmojiPicker();
+        document.getElementById("modal-emoji")?.classList.remove("hidden");
+      }
+
+      function closeEmojiPopup() {
+        document.getElementById("modal-emoji")?.classList.add("hidden");
+      }
+
+      function displayReaction({ displayName, emoji, self = false }) {
+        const overlay = document.getElementById("reaction-overlay");
+        if (!overlay) return;
+
+        const bubble = document.createElement("div");
+        bubble.className =
+          "ht-reaction-bubble" + (self ? " ht-reaction-bubble--self" : "");
+        bubble.style.marginLeft = `${(activeReactionCount % 5) * 8 - 16}px`;
+        activeReactionCount += 1;
+
+        bubble.innerHTML = `<span class="ht-reaction-emoji">${emoji}</span><span class="ht-reaction-name">${displayName}</span>`;
+        overlay.appendChild(bubble);
+
+        requestAnimationFrame(() => {
+          bubble.classList.add("ht-reaction-bubble--animate");
+        });
+
+        setTimeout(() => {
+          bubble.remove();
+          activeReactionCount = Math.max(0, activeReactionCount - 1);
+        }, 2900);
+      }
+
+      function sendReaction(reactionId) {
+        const reaction = HT_REACTIONS.find((item) => item.id === reactionId);
+        if (!reaction) return;
+
+        const now = Date.now();
+        if (now - lastReactionSentAt < REACTION_COOLDOWN_MS) {
+          showToast("Tunggu sebentar sebelum kirim reaksi lagi.", "info");
+          return;
+        }
+        lastReactionSentAt = now;
+        closeEmojiPopup();
+
+        if (navigator.vibrate) navigator.vibrate(20);
+
+        displayReaction({
+          displayName: myDisplayName,
+          emoji: reaction.emoji,
+          self: true,
+        });
+
+        broadcastDataAllSlots({
+          type: "REACTION",
+          peerId: myPeerId,
+          displayName: myDisplayName,
+          emoji: reaction.emoji,
+          reactionId: reaction.id,
+          timestamp: now,
+        });
+      }
+
+      function handlePeerReaction(peerId, data) {
+        if (!data?.emoji) return;
+        if (peerId === myPeerId) return;
+
+        displayReaction({
+          displayName: data.displayName || getPeerDisplayName(peerId),
+          emoji: data.emoji,
+          self: false,
+        });
+      }
+
+      function setupEmojiListeners() {
+        document.getElementById("btn-open-emoji")?.addEventListener("click", () => {
+          openEmojiPopup();
+        });
+        document.getElementById("btn-close-emoji")?.addEventListener("click", () => {
+          closeEmojiPopup();
+        });
+        document.getElementById("modal-emoji")?.addEventListener("click", (e) => {
+          if (e.target.id === "modal-emoji") closeEmojiPopup();
+        });
       }
 
       async function requestNotificationPermission() {
@@ -1772,33 +2441,35 @@
         } catch (e) {}
       }
 
-      function notifyMemberJoined(peerId) {
-        if (!peerId || peerId === myPeerId || notifiedJoinPeers.has(peerId)) {
+      function notifyMemberJoined(peerId, slotId = "A") {
+        const slot = getSlot(slotId);
+        if (!peerId || peerId === slot.myPeerId || slot.notifiedJoinPeers.has(peerId)) {
           return;
         }
-        notifiedJoinPeers.add(peerId);
-        const name = getPeerDisplayName(peerId);
-        showToast(`${name} masuk saluran`, "join");
+        slot.notifiedJoinPeers.add(peerId);
+        const name = getPeerDisplayName(peerId, slotId);
+        showToast(`${name} masuk ${getSlotChannelLabel(slotId)}`, "join");
         if (document.visibilityState !== "visible") {
           showBrowserNotification(
             "Anggota Masuk — PTT SIBAGUS",
-            `${name} bergabung ke ${roomName}`,
+            `${name} bergabung ke ${slot.roomName}`,
           );
         }
         if (navigator.vibrate) navigator.vibrate(30);
       }
 
-      function notifyMemberLeft(peerId) {
-        if (!peerId || peerId === myPeerId || !notifiedJoinPeers.has(peerId)) {
+      function notifyMemberLeft(peerId, slotId = "A") {
+        const slot = getSlot(slotId);
+        if (!peerId || peerId === slot.myPeerId || !slot.notifiedJoinPeers.has(peerId)) {
           return;
         }
-        const name = getPeerDisplayName(peerId);
-        notifiedJoinPeers.delete(peerId);
-        showToast(`${name} keluar saluran`, "leave");
+        const name = getPeerDisplayName(peerId, slotId);
+        slot.notifiedJoinPeers.delete(peerId);
+        showToast(`${name} keluar ${getSlotChannelLabel(slotId)}`, "leave");
         if (document.visibilityState !== "visible") {
           showBrowserNotification(
             "Anggota Keluar — PTT SIBAGUS",
-            `${name} meninggalkan ${roomName}`,
+            `${name} meninggalkan ${slot.roomName}`,
           );
         }
         if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
@@ -1807,78 +2478,83 @@
       function touchPeerPresence(
         peerId,
         { displayName = null, lastSeen = null, dataOpen = null } = {},
+        slotId = "A",
       ) {
-        if (!peerId || peerId === myPeerId) return;
-        const prev = peerPresence.get(peerId) || {
+        const slot = getSlot(slotId);
+        if (!peerId || peerId === slot.myPeerId) return;
+        const prev = slot.peerPresence.get(peerId) || {
           displayName: null,
           lastSeen: 0,
           dataOpen: false,
         };
-        peerPresence.set(peerId, {
+        slot.peerPresence.set(peerId, {
           displayName: displayName || prev.displayName,
           lastSeen: lastSeen ?? Date.now(),
           dataOpen: dataOpen ?? prev.dataOpen,
         });
-        if (displayName) peerNames.set(peerId, displayName);
+        if (displayName) slot.peerNames.set(peerId, displayName);
       }
 
-      function isPeerConnectionOpen(peerId) {
-        const conn = dataConnections.get(peerId);
+      function isPeerConnectionOpen(peerId, slotId = "A") {
+        const slot = getSlot(slotId);
+        const conn = slot.dataConnections.get(peerId);
         return !!(conn && conn.open);
       }
 
-      function getOnlinePeerIds() {
+      function getOnlinePeerIds(slotId = "A") {
+        const slot = getSlot(slotId);
         const online = [];
-        connectedPeersInfo.forEach((peerId) => {
-          if (isPeerConnectionOpen(peerId)) online.push(peerId);
+        slot.connectedPeersInfo.forEach((peerId) => {
+          if (isPeerConnectionOpen(peerId, slotId)) online.push(peerId);
         });
         return online;
       }
 
-      function removePeerFromChannel(peerId, { notify = true } = {}) {
-        if (!peerId || peerId === myPeerId) return;
+      function removePeerFromChannel(peerId, { notify = true, slotId = "A" } = {}) {
+        const slot = getSlot(slotId);
+        if (!peerId || peerId === slot.myPeerId) return;
         if (
-          !connectedPeersInfo.has(peerId) &&
-          !dataConnections.has(peerId) &&
-          !peerPresence.has(peerId)
+          !slot.connectedPeersInfo.has(peerId) &&
+          !slot.dataConnections.has(peerId) &&
+          !slot.peerPresence.has(peerId)
         ) {
           return;
         }
 
-        if (notify) notifyMemberLeft(peerId);
+        if (notify) notifyMemberLeft(peerId, slotId);
 
-        if (dataConnections.has(peerId)) {
-          const conn = dataConnections.get(peerId);
-          dataConnections.delete(peerId);
+        if (slot.dataConnections.has(peerId)) {
+          const conn = slot.dataConnections.get(peerId);
+          slot.dataConnections.delete(peerId);
           try {
             conn.close();
           } catch (e) {}
         }
 
-        if (activeCalls.has(peerId)) {
-          const call = activeCalls.get(peerId);
-          activeCalls.delete(peerId);
+        if (slot.activeCalls.has(peerId)) {
+          const call = slot.activeCalls.get(peerId);
+          slot.activeCalls.delete(peerId);
           try {
             call.close();
           } catch (e) {}
         }
 
-        stopRemoteAudio(peerId);
-        connectedPeersInfo.delete(peerId);
-        peerNames.delete(peerId);
-        peerPresence.delete(peerId);
-        notifiedJoinPeers.delete(peerId);
+        stopRemoteAudio(peerId, slotId);
+        slot.connectedPeersInfo.delete(peerId);
+        slot.peerNames.delete(peerId);
+        slot.peerPresence.delete(peerId);
+        slot.notifiedJoinPeers.delete(peerId);
 
-        if (activeBroadcaster === peerId) {
-          if (rxHangTimeTimer) clearTimeout(rxHangTimeTimer);
-          rxHangTimeTimer = null;
-          isReceiving = false;
-          activeBroadcaster = null;
-          updateStatusDisplay("idle");
-          if (isSpeakerRelayMode() && speakerRelayActive) {
+        if (slot.activeBroadcaster === peerId) {
+          if (slot.rxHangTimeTimer) clearTimeout(slot.rxHangTimeTimer);
+          slot.rxHangTimeTimer = null;
+          slot.isReceiving = false;
+          slot.activeBroadcaster = null;
+          updateCombinedStatus();
+          if (slotId === "A" && isSpeakerRelayMode() && speakerRelayActive) {
             resumeSpeakerRelayAfterRx();
             if (micStream) setupVisualizerSource(micStream);
-          } else {
+          } else if (!isAnySlotTransmitting() && !isRemoteRxActive()) {
             restoreVoxStandbyState();
           }
         }
@@ -1886,29 +2562,31 @@
         updatePeersListUI();
       }
 
-      function markPeerActive(peerId, displayName = null) {
-        if (!peerId || peerId === myPeerId) return;
+      function markPeerActive(peerId, displayName = null, slotId = "A") {
+        const slot = getSlot(slotId);
+        if (!peerId || peerId === slot.myPeerId) return;
 
-        touchPeerPresence(peerId, { displayName, dataOpen: true });
-        connectedPeersInfo.add(peerId);
-        if (displayName) peerNames.set(peerId, displayName);
-        maybeAnnouncePeerJoin(peerId);
+        touchPeerPresence(peerId, { displayName, dataOpen: true }, slotId);
+        slot.connectedPeersInfo.add(peerId);
+        if (displayName) slot.peerNames.set(peerId, displayName);
+        maybeAnnouncePeerJoin(peerId, slotId);
         updatePeersListUI();
       }
 
-      function pruneStalePeers() {
-        if (appPoweredOff || !peer) return;
+      function pruneStalePeersForSlot(slotId) {
+        const slot = getSlot(slotId);
+        if (!slot.peer) return;
 
         const toRemove = [];
 
-        connectedPeersInfo.forEach((peerId) => {
-          const connOpen = isPeerConnectionOpen(peerId);
-          const presence = peerPresence.get(peerId);
+        slot.connectedPeersInfo.forEach((peerId) => {
+          const connOpen = isPeerConnectionOpen(peerId, slotId);
+          const presence = slot.peerPresence.get(peerId);
           const lastSeen = presence?.lastSeen || 0;
           const stale = Date.now() - lastSeen > PEER_STALE_MS;
 
           if (connOpen) {
-            touchPeerPresence(peerId, { dataOpen: true });
+            touchPeerPresence(peerId, { dataOpen: true }, slotId);
             return;
           }
 
@@ -1917,15 +2595,22 @@
           }
         });
 
-        peerPresence.forEach((presence, peerId) => {
-          if (connectedPeersInfo.has(peerId)) return;
+        slot.peerPresence.forEach((presence, peerId) => {
+          if (slot.connectedPeersInfo.has(peerId)) return;
           if (Date.now() - presence.lastSeen > PEER_STALE_MS) {
-            peerPresence.delete(peerId);
-            peerNames.delete(peerId);
+            slot.peerPresence.delete(peerId);
+            slot.peerNames.delete(peerId);
           }
         });
 
-        toRemove.forEach((peerId) => removePeerFromChannel(peerId));
+        toRemove.forEach((peerId) =>
+          removePeerFromChannel(peerId, { slotId }),
+        );
+      }
+
+      function pruneStalePeers() {
+        if (appPoweredOff) return;
+        getActiveSlotIds().forEach(pruneStalePeersForSlot);
       }
 
       function startPresenceMonitor() {
@@ -1940,16 +2625,17 @@
         }
       }
 
-      function maybeAnnouncePeerJoin(peerId) {
+      function maybeAnnouncePeerJoin(peerId, slotId = "A") {
+        const slot = getSlot(slotId);
         if (
           !peerId ||
-          peerId === myPeerId ||
-          notifiedJoinPeers.has(peerId) ||
-          !connectedPeersInfo.has(peerId)
+          peerId === slot.myPeerId ||
+          slot.notifiedJoinPeers.has(peerId) ||
+          !slot.connectedPeersInfo.has(peerId)
         ) {
           return;
         }
-        notifyMemberJoined(peerId);
+        notifyMemberJoined(peerId, slotId);
       }
 
       // Initialize Web Audio Context safely on user interaction
@@ -2170,20 +2856,21 @@
           outgoingStream?.getAudioTracks()[0] || micTrack;
         if (!outTrack) return;
 
-        for (const call of activeCalls.values()) {
-          const pc = call.peerConnection || call._pc;
-          if (!pc) continue;
-          const sender = pc
-            .getSenders()
-            .find((s) => s.track && s.track.kind === "audio");
-          if (sender) {
-            try {
-              await sender.replaceTrack(outTrack);
-            } catch (e) {
-              console.warn("Gagal ganti track audio:", e);
+        getActiveSlotIds().forEach((slotId) => {
+          const slot = getSlot(slotId);
+          for (const call of slot.activeCalls.values()) {
+            const pc = call.peerConnection || call._pc;
+            if (!pc) continue;
+            const sender = pc
+              .getSenders()
+              .find((s) => s.track && s.track.kind === "audio");
+            if (sender) {
+              sender.replaceTrack(outTrack).catch((e) => {
+                console.warn("Gagal ganti track audio:", e);
+              });
             }
           }
-        }
+        });
       }
 
       async function populateMicDeviceList() {
@@ -2475,69 +3162,83 @@
         }
       }
 
-      function leaveCurrentChannel({ sendLeave = true } = {}) {
-        if (isTransmitting) stopTransmitting();
-        isReceiving = false;
-        activeBroadcaster = null;
+      function leaveChannelSlot(slotId, { sendLeave = true } = {}) {
+        const slot = getSlot(slotId);
+        if (slot.isTransmitting && activeTxSlot === slotId) {
+          stopTransmitting(false, {}, slotId);
+        }
+        slot.isReceiving = false;
+        slot.activeBroadcaster = null;
 
-        if (sendLeave && mqttClient?.connected && myPeerId) {
-          sendMqttPresence("LEAVE");
+        if (sendLeave && slot.mqttClient?.connected && slot.myPeerId) {
+          sendMqttPresence("LEAVE", slotId);
         }
 
-        activeCalls.forEach((call) => {
+        slot.activeCalls.forEach((call) => {
           try {
             call.close();
           } catch (e) {}
         });
-        activeCalls.clear();
+        slot.activeCalls.clear();
 
-        dataConnections.forEach((conn) => {
+        slot.dataConnections.forEach((conn) => {
           try {
             conn.close();
           } catch (e) {}
         });
-        dataConnections.clear();
+        slot.dataConnections.clear();
 
-        connectedPeersInfo.clear();
-        peerNames.clear();
-        peerPresence.clear();
-        notifiedJoinPeers.clear();
+        slot.connectedPeersInfo.clear();
+        slot.peerNames.clear();
+        slot.peerPresence.clear();
+        slot.notifiedJoinPeers.clear();
 
-        remoteAudioElements.forEach((el) => {
+        slot.remoteAudioElements.forEach((el) => {
           el.pause();
           el.srcObject = null;
           el.remove();
         });
-        remoteAudioElements.clear();
+        slot.remoteAudioElements.clear();
 
-        if (heartbeatInterval) {
-          clearInterval(heartbeatInterval);
-          heartbeatInterval = null;
+        if (slot.heartbeatInterval) {
+          clearInterval(slot.heartbeatInterval);
+          slot.heartbeatInterval = null;
         }
 
-        if (mqttClient) {
+        if (slot.mqttClient) {
           try {
-            mqttClient.end(true);
+            slot.mqttClient.end(true);
           } catch (e) {}
-          mqttClient = null;
+          slot.mqttClient = null;
         }
 
-        if (channelBroadcast) {
+        if (slot.channelBroadcast) {
           try {
-            channelBroadcast.close();
+            slot.channelBroadcast.close();
           } catch (e) {}
-          channelBroadcast = null;
+          slot.channelBroadcast = null;
         }
 
-        if (peer) {
+        if (slot.peer) {
           try {
-            peer.destroy();
+            slot.peer.destroy();
           } catch (e) {}
-          peer = null;
+          slot.peer = null;
         }
 
-        stopPresenceMonitor();
+        if (slot.rxHangTimeTimer) {
+          clearTimeout(slot.rxHangTimeTimer);
+          slot.rxHangTimeTimer = null;
+        }
+
         updatePeersListUI();
+      }
+
+      function leaveCurrentChannel({ sendLeave = true } = {}) {
+        getActiveSlotIds().forEach((slotId) =>
+          leaveChannelSlot(slotId, { sendLeave }),
+        );
+        stopPresenceMonitor();
       }
 
       async function ensureAudioPipelineReady() {
@@ -2553,7 +3254,7 @@
           setupVisualizerSource(micStream);
           setupVoxAnalyser(micStream);
         }
-        if (isSpeakerRelayMode() && speakerRelayActive && !isTransmitting && !isRemoteRxActive()) {
+        if (isSpeakerRelayMode() && speakerRelayActive && !isTransmitting && !isRemoteRxActive("A")) {
           resumeSpeakerRelayAfterRx();
         }
         return true;
@@ -2570,7 +3271,54 @@
         }
       }
 
+      async function switchToRoomForSlot(
+        slotId,
+        newRoomName,
+        { updateChannelUi = null } = {},
+      ) {
+        leaveChannelSlot(slotId, { sendLeave: true });
+
+        const slot = getSlot(slotId);
+        slot.roomName = newRoomName;
+
+        if (slotId === "A") {
+          if (updateChannelUi) {
+            const chObj = PMR_CHANNELS[currentChannelIdx];
+            updateChannelDisplayUI(chObj);
+            if (chSelectElem) chSelectElem.value = currentChannelIdx;
+          } else {
+            syncChannelIndexFromRoom();
+            const chObj = PMR_CHANNELS[currentChannelIdx];
+            if (
+              roomName.toUpperCase() === `PMR-CH-${chObj.ch}`.toUpperCase()
+            ) {
+              updateChannelDisplayUI(chObj);
+            }
+          }
+          updateShareMeta();
+        } else {
+          const chMatch = newRoomName.match(/PMR-CH-(\d+)/i);
+          if (chMatch) {
+            const chNum = parseInt(chMatch[1], 10);
+            const idx = PMR_CHANNELS.findIndex((c) => c.ch === chNum);
+            if (idx >= 0) {
+              slotBChannelIdx = idx;
+              slot.channelIdx = idx;
+            }
+          }
+        }
+
+        persistAppCache();
+        await ensureAudioPipelineReady();
+        initPeerConnectionForSlot(slotId, { skipLeave: true });
+        syncDualUiLabels();
+      }
+
       async function switchToRoom(newRoomName, { updateChannelUi = null } = {}) {
+        if (dualChannelEnabled) {
+          await switchToRoomForSlot("A", newRoomName, { updateChannelUi });
+          return;
+        }
         leaveCurrentChannel({ sendLeave: true });
 
         roomName = newRoomName;
@@ -2590,7 +3338,7 @@
         updateShareMeta();
         persistAppCache();
         await ensureAudioPipelineReady();
-        initPeerConnection({ skipLeave: true });
+        initPeerConnectionForSlot("A", { skipLeave: true });
       }
 
       function setupVisibilityHandlers() {
@@ -2618,6 +3366,7 @@
       function teardownConnections() {
         leaveCurrentChannel({ sendLeave: true });
         myPeerId = "";
+        slotB.myPeerId = "";
       }
 
       async function powerOffApp() {
@@ -2629,10 +3378,14 @@
         stopNetworkMonitor();
         updateNetworkQualityUI({ level: 0, traffic: "gray" }, 0, 0);
         speakerRelayActive = false;
-        if (isTransmitting) {
-          isTransmitting = false;
-          setTransmissionGain(false);
-        }
+        activeTxSlot = null;
+        getActiveSlotIds().forEach((slotId) => {
+          const slot = getSlot(slotId);
+          if (slot.isTransmitting) {
+            slot.isTransmitting = false;
+          }
+        });
+        setTransmissionGain(false);
         teardownConnections();
         releaseMicrophone();
 
@@ -2855,7 +3608,7 @@
         }
 
         // VOX hanya aktif saat saluran tidak sedang RX (termasuk tail audio peer)
-        if (!isRemoteRxActive()) {
+        if (!dualChannelEnabled && !isRemoteRxActive("A")) {
           if (volumePercent >= voxThreshold) {
             if (voxHangTimeTimer) {
               clearTimeout(voxHangTimeTimer);
@@ -2864,7 +3617,7 @@
 
             if (!isTransmitting) {
               voxAutoTriggered = true;
-              startTransmitting();
+              startTransmitting("A");
             }
           } else if (isTransmitting && voxAutoTriggered) {
             if (!voxHangTimeTimer) {
@@ -3002,14 +3755,22 @@
 
       // --- PeerJS Multi-User Signaling & Mesh Network ---
       function initPeerConnection({ skipLeave = false } = {}) {
+        initPeerConnectionForSlot("A", { skipLeave });
+        if (dualChannelEnabled) {
+          initPeerConnectionForSlot("B", { skipLeave: true });
+        }
+      }
+
+      function initPeerConnectionForSlot(slotId, { skipLeave = false } = {}) {
+        const slot = getSlot(slotId);
         if (!skipLeave) {
-          leaveCurrentChannel({ sendLeave: true });
+          leaveChannelSlot(slotId, { sendLeave: true });
         }
 
-        const sanitizedRoom = roomName.toUpperCase().replace(/[^A-Z0-9]/g, "");
+        const sanitizedRoom = slot.roomName.toUpperCase().replace(/[^A-Z0-9]/g, "");
         const uniqueSuffix = Math.random().toString(36).substring(2, 6);
-        myPeerId = `HT-${sanitizedRoom}-${uniqueSuffix}`;
-        updateMyDisplayCallsign();
+        slot.myPeerId = `HT-${sanitizedRoom}-${uniqueSuffix}`;
+        if (slotId === "A") updateMyDisplayCallsign();
 
         const defaultIceServers = [
           { urls: "stun:stun.l.google.com:19302" },
@@ -3021,151 +3782,162 @@
           { urls: "stun:stun.services.mozilla.com" },
         ];
 
-        peer = new Peer(myPeerId, {
+        slot.peer = new Peer(slot.myPeerId, {
           config: {
             iceServers: defaultIceServers,
             sdpSemantics: "unified-plan",
           },
         });
 
-        peer.on("open", (id) => {
-          console.log("Connected to PeerServer with ID:", id);
-          updateStatusDisplay("idle");
-          if (isSpeakerRelayMode()) startSpeakerRelay();
-          discoverChannelPeers();
+        slot.peer.on("open", () => {
+          console.log(`[${slotId}] Connected:`, slot.myPeerId);
+          updateCombinedStatus();
+          if (slotId === "A" && isSpeakerRelayMode()) startSpeakerRelay();
+          discoverChannelPeers(slotId);
+          if (!presenceSweepInterval) startPresenceMonitor();
         });
 
-        peer.on("call", (call) => {
-          console.log("Incoming call from:", call.peer);
+        slot.peer.on("call", (call) => {
           const answerStream = outgoingStream || micStream;
           call.answer(answerStream);
 
           call.on("stream", (remoteStream) => {
-            playRemoteAudio(remoteStream, call.peer);
+            playRemoteAudio(remoteStream, call.peer, slotId);
           });
 
           call.on("close", () => {
-            stopRemoteAudio(call.peer);
-            activeCalls.delete(call.peer);
+            stopRemoteAudio(call.peer, slotId);
+            slot.activeCalls.delete(call.peer);
           });
 
-          activeCalls.set(call.peer, call);
+          slot.activeCalls.set(call.peer, call);
         });
 
-        peer.on("connection", (conn) => {
-          setupDataConnection(conn);
+        slot.peer.on("connection", (conn) => {
+          setupDataConnection(conn, slotId);
         });
 
-        peer.on("error", (err) => {
-          console.warn("PeerJS error:", err.type, err.message);
+        slot.peer.on("error", (err) => {
+          console.warn(`[${slotId}] PeerJS error:`, err.type, err.message);
           if (err.peer) {
-            removePeerFromChannel(err.peer, { notify: false });
+            removePeerFromChannel(err.peer, { notify: false, slotId });
           }
         });
       }
 
-      function setupDataConnection(conn) {
-        dataConnections.set(conn.peer, conn);
-        touchPeerPresence(conn.peer, { dataOpen: false });
+      function setupDataConnection(conn, slotId = "A") {
+        const slot = getSlot(slotId);
+        slot.dataConnections.set(conn.peer, conn);
+        touchPeerPresence(conn.peer, { dataOpen: false }, slotId);
 
         conn.on("open", () => {
-          touchPeerPresence(conn.peer, { dataOpen: true });
+          touchPeerPresence(conn.peer, { dataOpen: true }, slotId);
         });
 
         conn.on("data", (data) => {
-          touchPeerPresence(conn.peer, { lastSeen: Date.now() });
+          touchPeerPresence(conn.peer, { lastSeen: Date.now() }, slotId);
 
           if (data.type === "PTT_START") {
-            handlePeerStartedTalking(conn.peer, data.userName);
+            handlePeerStartedTalking(conn.peer, data.userName, slotId);
           } else if (data.type === "PTT_STOP") {
-            handlePeerStoppedTalking(conn.peer);
+            handlePeerStoppedTalking(conn.peer, slotId);
           } else if (data.type === "HELLO") {
-            markPeerActive(conn.peer, data.displayName || null);
+            markPeerActive(conn.peer, data.displayName || null, slotId);
             conn.send({
               type: "HELLO_ACK",
-              peerId: myPeerId,
+              peerId: slot.myPeerId,
               displayName: myDisplayName,
             });
           } else if (data.type === "HELLO_ACK") {
-            markPeerActive(conn.peer, data.displayName || null);
+            markPeerActive(conn.peer, data.displayName || null, slotId);
           } else if (data.type === "UPDATE_NAME") {
             if (data.displayName) {
-              touchPeerPresence(conn.peer, { displayName: data.displayName });
+              touchPeerPresence(conn.peer, { displayName: data.displayName }, slotId);
               updatePeersListUI();
             }
+          } else if (data.type === "REACTION") {
+            handlePeerReaction(conn.peer, data);
           }
         });
 
         conn.on("close", () => {
-          const shouldNotify = connectedPeersInfo.has(conn.peer);
-          removePeerFromChannel(conn.peer, { notify: shouldNotify });
+          const shouldNotify = slot.connectedPeersInfo.has(conn.peer);
+          removePeerFromChannel(conn.peer, { notify: shouldNotify, slotId });
         });
 
         conn.on("error", () => {
-          removePeerFromChannel(conn.peer, { notify: false });
+          removePeerFromChannel(conn.peer, { notify: false, slotId });
         });
       }
 
-      function connectToPeer(targetPeerId) {
-        if (targetPeerId === myPeerId) return;
+      function connectToPeer(targetPeerId, slotId = "A") {
+        const slot = getSlot(slotId);
+        if (targetPeerId === slot.myPeerId) return;
 
-        if (dataConnections.has(targetPeerId)) {
-          if (isPeerConnectionOpen(targetPeerId)) return;
-          removePeerFromChannel(targetPeerId, { notify: false });
+        if (slot.dataConnections.has(targetPeerId)) {
+          if (isPeerConnectionOpen(targetPeerId, slotId)) return;
+          removePeerFromChannel(targetPeerId, { notify: false, slotId });
         }
 
-        if (!peer || !peer.open) return;
+        if (!slot.peer || !slot.peer.open) return;
 
-        const conn = peer.connect(targetPeerId);
+        const conn = slot.peer.connect(targetPeerId);
         conn.on("open", () => {
-          setupDataConnection(conn);
-          conn.send({ type: "HELLO", peerId: myPeerId, displayName: myDisplayName });
+          setupDataConnection(conn, slotId);
+          conn.send({
+            type: "HELLO",
+            peerId: slot.myPeerId,
+            displayName: myDisplayName,
+          });
         });
 
         const streamToSend = outgoingStream || micStream;
         if (streamToSend) {
-          const call = peer.call(targetPeerId, streamToSend);
+          const call = slot.peer.call(targetPeerId, streamToSend);
           call.on("stream", (remoteStream) => {
-            playRemoteAudio(remoteStream, targetPeerId);
+            playRemoteAudio(remoteStream, targetPeerId, slotId);
           });
           call.on("close", () => {
-            stopRemoteAudio(targetPeerId);
-            activeCalls.delete(targetPeerId);
+            stopRemoteAudio(targetPeerId, slotId);
+            slot.activeCalls.delete(targetPeerId);
           });
-          activeCalls.set(targetPeerId, call);
+          slot.activeCalls.set(targetPeerId, call);
         }
       }
 
-      function discoverChannelPeers() {
-        // 1. Local Browser Tab Fallback
+      function discoverChannelPeers(slotId = "A") {
+        const slot = getSlot(slotId);
+
         if (window.BroadcastChannel) {
           try {
-            if (channelBroadcast) {
-              channelBroadcast.close();
-              channelBroadcast = null;
+            if (slot.channelBroadcast) {
+              slot.channelBroadcast.close();
+              slot.channelBroadcast = null;
             }
 
-            channelBroadcast = new BroadcastChannel(`HT_CHANNEL_${roomName}`);
-            channelBroadcast.postMessage({
+            slot.channelBroadcast = new BroadcastChannel(
+              `HT_CHANNEL_${slot.roomName}`,
+            );
+            slot.channelBroadcast.postMessage({
               type: "ANNOUNCE_PEER",
-              peerId: myPeerId,
+              peerId: slot.myPeerId,
             });
 
-            channelBroadcast.onmessage = (event) => {
+            slot.channelBroadcast.onmessage = (event) => {
               if (
                 event.data.type === "ANNOUNCE_PEER" &&
-                event.data.peerId !== myPeerId
+                event.data.peerId !== slot.myPeerId
               ) {
-                connectToPeer(event.data.peerId);
-                channelBroadcast.postMessage({
+                connectToPeer(event.data.peerId, slotId);
+                slot.channelBroadcast.postMessage({
                   type: "ANNOUNCE_ACK",
-                  peerId: myPeerId,
+                  peerId: slot.myPeerId,
                 });
               } else if (
                 event.data.type === "ANNOUNCE_ACK" &&
-                event.data.peerId !== myPeerId
+                event.data.peerId !== slot.myPeerId
               ) {
-                connectToPeer(event.data.peerId);
+                connectToPeer(event.data.peerId, slotId);
               }
             };
           } catch (e) {
@@ -3173,61 +3945,63 @@
           }
         }
 
-        // 2. Global Multi-Device Online Signaling (MQTT Over WebSocket)
-        setupMqttOnlineSignaling();
+        setupMqttOnlineSignaling(slotId);
       }
 
-      function setupMqttOnlineSignaling() {
-        if (heartbeatInterval) {
-          clearInterval(heartbeatInterval);
-          heartbeatInterval = null;
+      function setupMqttOnlineSignaling(slotId = "A") {
+        const slot = getSlot(slotId);
+        if (slot.heartbeatInterval) {
+          clearInterval(slot.heartbeatInterval);
+          slot.heartbeatInterval = null;
         }
 
         const brokerUrl = "wss://broker.emqx.io:8084/mqtt";
-        const sanitizedRoom = roomName.toUpperCase().replace(/[^A-Z0-9]/g, "");
-        const topic = `ht_walkie_talkie_v2/room/${sanitizedRoom}`;
+        const topic = getMqttTopicForSlot(slotId);
 
         try {
-          mqttClient = mqtt.connect(brokerUrl, {
-            clientId: `ht_${myPeerId}`,
+          slot.mqttClient = mqtt.connect(brokerUrl, {
+            clientId: `ht_${slot.myPeerId}`,
             keepalive: 30,
             clean: true,
             reconnectPeriod: 3000,
           });
 
-          mqttClient.on("connect", () => {
-            console.log("Terhubung ke server signal online global:", topic);
-            mqttClient.subscribe(topic, { qos: 0 });
+          slot.mqttClient.on("connect", () => {
+            console.log(`[${slotId}] MQTT:`, topic);
+            slot.mqttClient.subscribe(topic, { qos: 0 });
+            sendMqttPresence("ANNOUNCE", slotId);
 
-            sendMqttPresence("ANNOUNCE");
-            startPresenceMonitor();
-
-            heartbeatInterval = setInterval(() => {
-              sendMqttPresence("HEARTBEAT");
+            slot.heartbeatInterval = setInterval(() => {
+              sendMqttPresence("HEARTBEAT", slotId);
             }, 8000);
           });
 
-          mqttClient.on("message", (t, message) => {
+          slot.mqttClient.on("message", (t, message) => {
+            if (t !== topic) return;
             try {
               const payload = JSON.parse(message.toString());
-              if (!payload || payload.peerId === myPeerId) return;
+              if (!payload || payload.peerId === slot.myPeerId) return;
 
               if (
                 payload.type === "ANNOUNCE" ||
                 payload.type === "HEARTBEAT" ||
                 payload.type === "RESPONSE"
               ) {
-                touchPeerPresence(payload.peerId, {
-                  displayName: payload.displayName || null,
-                  lastSeen: payload.timestamp || Date.now(),
-                });
-                connectToPeer(payload.peerId);
+                touchPeerPresence(
+                  payload.peerId,
+                  {
+                    displayName: payload.displayName || null,
+                    lastSeen: payload.timestamp || Date.now(),
+                  },
+                  slotId,
+                );
+                connectToPeer(payload.peerId, slotId);
 
                 if (payload.type === "ANNOUNCE") {
-                  sendMqttPresence("RESPONSE");
+                  sendMqttPresence("RESPONSE", slotId);
                 }
               } else if (payload.type === "LEAVE") {
-                removePeerFromChannel(payload.peerId);
+                removePeerFromChannel(payload.peerId, { slotId });
               }
             } catch (e) {
               console.error("Gagal membaca pesan signal MQTT:", e);
@@ -3238,17 +4012,14 @@
         }
       }
 
-      function sendMqttPresence(actionType = "ANNOUNCE") {
-        if (mqttClient && mqttClient.connected) {
-          const sanitizedRoom = roomName
-            .toUpperCase()
-            .replace(/[^A-Z0-9]/g, "");
-          const topic = `ht_walkie_talkie_v2/room/${sanitizedRoom}`;
-          mqttClient.publish(
-            topic,
+      function sendMqttPresence(actionType = "ANNOUNCE", slotId = "A") {
+        const slot = getSlot(slotId);
+        if (slot.mqttClient && slot.mqttClient.connected) {
+          slot.mqttClient.publish(
+            getMqttTopicForSlot(slotId),
             JSON.stringify({
               type: actionType,
-              peerId: myPeerId,
+              peerId: slot.myPeerId,
               displayName: myDisplayName,
               timestamp: Date.now(),
             }),
@@ -3256,110 +4027,140 @@
         }
       }
 
-      // Clean disconnect on page unload
+      function sendMqttPresenceAll(actionType = "ANNOUNCE") {
+        getActiveSlotIds().forEach((slotId) =>
+          sendMqttPresence(actionType, slotId),
+        );
+      }
+
       window.addEventListener("beforeunload", () => {
-        sendMqttPresence("LEAVE");
+        sendMqttPresenceAll("LEAVE");
       });
 
-      function broadcastData(data) {
-        dataConnections.forEach((conn) => {
+      function broadcastData(data, slotId = "A") {
+        const slot = getSlot(slotId);
+        slot.dataConnections.forEach((conn) => {
           if (conn.open) {
             conn.send(data);
           }
         });
       }
 
+      function broadcastDataAllSlots(data) {
+        getActiveSlotIds().forEach((slotId) => broadcastData(data, slotId));
+      }
+
       // --- Remote Audio Playback ---
-      function playRemoteAudio(stream, peerId) {
-        let audioEl = remoteAudioElements.get(peerId);
+      function playRemoteAudio(stream, peerId, slotId = "A") {
+        const slot = getSlot(slotId);
+        let audioEl = slot.remoteAudioElements.get(peerId);
         if (!audioEl) {
           audioEl = document.createElement("audio");
           audioEl.autoplay = true;
           audioEl.playsInline = true;
           audioEl.setAttribute("playsinline", "");
+          audioEl.dataset.slot = slotId;
           document.body.appendChild(audioEl);
-          remoteAudioElements.set(peerId, audioEl);
+          slot.remoteAudioElements.set(peerId, audioEl);
         }
         audioEl.srcObject = stream;
         audioEl.play().catch(() => {});
-        if (isReceiving && activeBroadcaster === peerId) {
+        if (slot.isReceiving && slot.activeBroadcaster === peerId) {
           setupVisualizerSource(stream);
         }
       }
 
-      function stopRemoteAudio(peerId) {
-        const audioEl = remoteAudioElements.get(peerId);
+      function stopRemoteAudio(peerId, slotId = "A") {
+        const slot = getSlot(slotId);
+        const audioEl = slot.remoteAudioElements.get(peerId);
         if (audioEl) {
           audioEl.pause();
           audioEl.srcObject = null;
           audioEl.remove();
-          remoteAudioElements.delete(peerId);
+          slot.remoteAudioElements.delete(peerId);
         }
       }
 
-      function handlePeerStartedTalking(peerId, userName) {
-        if (rxHangTimeTimer) {
-          clearTimeout(rxHangTimeTimer);
-          rxHangTimeTimer = null;
+      function handlePeerStartedTalking(peerId, userName, slotId = "A") {
+        const slot = getSlot(slotId);
+        if (slot.rxHangTimeTimer) {
+          clearTimeout(slot.rxHangTimeTimer);
+          slot.rxHangTimeTimer = null;
         }
         if (voxHangTimeTimer) {
           clearTimeout(voxHangTimeTimer);
           voxHangTimeTimer = null;
         }
-        if (isTransmitting && voxAutoTriggered) {
-          stopTransmitting(true);
+        if (
+          slotId === "A" &&
+          isTransmitting &&
+          voxAutoTriggered &&
+          activeTxSlot === "A"
+        ) {
+          stopTransmitting(true, {}, "A");
           voxAutoTriggered = false;
-        } else if (isSpeakerRelayMode() && isTransmitting) {
+        } else if (slotId === "A" && isSpeakerRelayMode() && isTransmitting) {
           pauseSpeakerRelayForRx();
         }
 
-        isReceiving = true;
-        activeBroadcaster = peerId;
+        slot.isReceiving = true;
+        slot.activeBroadcaster = peerId;
         playSquelchNoise(0.1);
-        const displayName =
-          peerNames.get(peerId) || peerId.substring(peerId.lastIndexOf("-") + 1);
-        updateStatusDisplay("receiving", displayName);
+        const displayName = getPeerDisplayName(peerId, slotId);
+        updateCombinedStatus();
         updatePeersListUI();
-        const remoteStream = remoteAudioElements.get(peerId)?.srcObject;
+        const remoteStream = slot.remoteAudioElements.get(peerId)?.srcObject;
         if (remoteStream) {
           setupVisualizerSource(remoteStream);
         }
       }
 
-      function handlePeerStoppedTalking(peerId) {
-        if (activeBroadcaster && activeBroadcaster !== peerId) return;
-        if (rxHangTimeTimer) clearTimeout(rxHangTimeTimer);
-        // Hang singkat agar trailing audio/roger tidak terpotong, lalu lepas RX pasti
-        rxHangTimeTimer = setTimeout(() => finalizePeerRxEnd(peerId), 600);
+      function handlePeerStoppedTalking(peerId, slotId = "A") {
+        const slot = getSlot(slotId);
+        if (slot.activeBroadcaster && slot.activeBroadcaster !== peerId) return;
+        if (slot.rxHangTimeTimer) clearTimeout(slot.rxHangTimeTimer);
+        slot.rxHangTimeTimer = setTimeout(
+          () => finalizePeerRxEnd(peerId, slotId),
+          600,
+        );
       }
 
       // --- PTT Push-to-Talk Action Handlers ---
-      function startTransmitting() {
-        if (isSpeakerRelayMode()) return;
-        if (isTransmitting || isRemoteRxActive()) return;
+      function startTransmitting(slotId = "A") {
+        if (isSpeakerRelayMode() && slotId === "A") return;
+        if (dualChannelEnabled && isSpeakerRelayMode()) return;
+        const slot = getSlot(slotId);
+        if (isAnySlotTransmitting()) return;
+        if (isRemoteRxActive(slotId)) return;
         initAudioContext();
 
         if (!isMicStreamActive()) {
           setupMicrophone().then((ok) => {
-            if (ok) executePTTStart();
+            if (ok) executePTTStart({ slotId });
           });
           return;
         }
-        executePTTStart();
+        executePTTStart({ slotId });
       }
 
-      function executePTTStart({ speakerRelay = false, quiet = false } = {}) {
-        isTransmitting = true;
-        if (speakerRelay || isSpeakerRelayMode()) {
+      function executePTTStart({
+        slotId = "A",
+        speakerRelay = false,
+        quiet = false,
+      } = {}) {
+        const slot = getSlot(slotId);
+        slot.isTransmitting = true;
+        activeTxSlot = slotId;
+        if (speakerRelay || (slotId === "A" && isSpeakerRelayMode())) {
           speakerRelayActive = true;
         }
 
         if (navigator.vibrate) navigator.vibrate(40);
 
         if (!quiet) playSquelchNoise(0.08);
-        updateStatusDisplay("transmitting");
+        updateCombinedStatus();
 
-        broadcastData({ type: "PTT_START", userName: myPeerId });
+        broadcastData({ type: "PTT_START", userName: slot.myPeerId }, slotId);
         setTransmissionGain(true);
 
         if (micStream) {
@@ -3367,11 +4168,20 @@
         }
       }
 
-      function stopTransmitting(fromVox = false, { force = false } = {}) {
-        if (!isTransmitting) return;
-        if (speakerRelayActive && isSpeakerRelayMode() && !force) return;
+      function stopTransmitting(fromVox = false, { force = false } = {}, slotId = activeTxSlot || "A") {
+        const slot = getSlot(slotId);
+        if (!slot.isTransmitting) return;
+        if (
+          speakerRelayActive &&
+          slotId === "A" &&
+          isSpeakerRelayMode() &&
+          !force
+        ) {
+          return;
+        }
 
-        isTransmitting = false;
+        slot.isTransmitting = false;
+        if (activeTxSlot === slotId) activeTxSlot = null;
         setTransmissionGain(false);
 
         if (!fromVox) voxAutoTriggered = false;
@@ -3382,15 +4192,148 @@
         }
 
         playRogerBeep();
-        updateStatusDisplay("idle");
+        updateCombinedStatus();
 
-        broadcastData({ type: "PTT_STOP" });
+        broadcastData({ type: "PTT_STOP" }, slotId);
 
-        restoreVoxStandbyState();
+        if (!isAnySlotTransmitting() && !isRemoteRxActive()) {
+          restoreVoxStandbyState();
+        }
       }
 
-      // Update UI Status Displays (LCD & LEDs)
-      function updateStatusDisplay(state, peerInfo = "") {
+      function getSlotPttElements(slotId) {
+        if (slotId === "B") {
+          return { btn: pttBtnB, sub: pttSubtextB };
+        }
+        if (dualChannelEnabled) {
+          return { btn: pttBtnA, sub: pttSubtextA };
+        }
+        return { btn: pttBtn, sub: pttSubtext };
+      }
+
+      function setSlotPttUi(slotId, state, peerInfo = "") {
+        const { btn, sub } = getSlotPttElements(slotId);
+        if (!btn || !sub) return;
+        const chLabel = getSlotChannelLabel(slotId);
+
+        switch (state) {
+          case "transmitting":
+            btn.className =
+              slotId === "B"
+                ? "ptt-slot-btn ptt-tx-active border-4 border-rose-400 flex flex-col items-center justify-center text-white shadow-2xl no-select cursor-pointer scale-95"
+                : dualChannelEnabled
+                  ? "ptt-slot-btn ptt-tx-active border-4 border-rose-400 flex flex-col items-center justify-center text-white shadow-2xl no-select cursor-pointer scale-95"
+                  : "w-40 h-40 rounded-full ptt-tx-active border-4 border-rose-400 flex flex-col items-center justify-center text-white shadow-2xl no-select cursor-pointer scale-95";
+            sub.textContent =
+              slotId === "A" && isSpeakerRelayMode()
+                ? "RELAY ON"
+                : "MENGIRIM...";
+            break;
+          case "receiving":
+            btn.className =
+              slotId === "B"
+                ? "ptt-slot-btn ptt-idle border-4 border-cyan-600 opacity-60 flex flex-col items-center justify-center text-gray-400 no-select cursor-not-allowed"
+                : dualChannelEnabled
+                  ? "ptt-slot-btn ptt-idle border-4 border-cyan-600 opacity-60 flex flex-col items-center justify-center text-gray-400 no-select cursor-not-allowed"
+                  : "w-40 h-40 rounded-full ptt-idle border-4 border-cyan-600 opacity-60 flex flex-col items-center justify-center text-gray-400 no-select cursor-not-allowed";
+            sub.textContent = `RX ${chLabel}: ${peerInfo}`;
+            break;
+          case "idle":
+          default:
+            btn.className =
+              slotId === "B"
+                ? "ptt-slot-btn ptt-idle border-4 border-sky-800 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer"
+                : dualChannelEnabled
+                  ? "ptt-slot-btn ptt-idle border-4 border-gray-700 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer"
+                  : "w-40 h-40 rounded-full ptt-idle border-4 border-gray-700 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer";
+            sub.textContent =
+              slotId === "A" && isSpeakerRelayMode()
+                ? "RELAY ON"
+                : slotId === "A" && voxEnabled
+                  ? "VOX ON"
+                  : "TAHAN";
+            break;
+        }
+      }
+
+      function updateCombinedStatus() {
+        syncVoxUiState();
+
+        const txSlot = getActiveSlotIds().find((id) => getSlot(id).isTransmitting);
+        const rxEntries = getActiveSlotIds()
+          .map((id) => {
+            const slot = getSlot(id);
+            if (!slot.isReceiving || !slot.activeBroadcaster) return null;
+            return {
+              slotId: id,
+              name: getPeerDisplayName(slot.activeBroadcaster, id),
+            };
+          })
+          .filter(Boolean);
+
+        if (txSlot) {
+          ledIndicator.className =
+            "w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_12px_#ef4444] animate-ping";
+          ledText.className = "text-[10px] font-mono font-bold text-rose-400";
+          ledText.textContent = `TX ${getSlotChannelLabel(txSlot)}`;
+          txRxBadge.className =
+            "px-1.5 py-0.5 rounded text-[10px] bg-rose-950 text-rose-300 font-bold border border-rose-700";
+          txRxBadge.textContent = `TX ${getSlotChannelLabel(txSlot)}`;
+        } else if (rxEntries.length > 0) {
+          const rx = rxEntries[0];
+          ledIndicator.className =
+            "w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_12px_#22d3ee] animate-pulse";
+          ledText.className = "text-[10px] font-mono font-bold text-cyan-400";
+          ledText.textContent = `RX ${getSlotChannelLabel(rx.slotId)}`;
+          txRxBadge.className =
+            "px-1.5 py-0.5 rounded text-[10px] bg-cyan-950 text-cyan-300 font-bold border border-cyan-700";
+          txRxBadge.textContent = `RX ${getSlotChannelLabel(rx.slotId)}: ${rx.name}`;
+        } else {
+          ledIndicator.className =
+            "w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]";
+          ledText.className =
+            "text-[10px] font-mono font-bold text-emerald-400";
+          ledText.textContent = dualChannelEnabled ? "DUAL STANDBY" : "STANDBY";
+          txRxBadge.className =
+            "px-1.5 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-300 font-bold border border-emerald-700";
+          txRxBadge.textContent = dualChannelEnabled ? "DUAL STANDBY" : "STANDBY";
+        }
+
+        getActiveSlotIds().forEach((slotId) => {
+          const slot = getSlot(slotId);
+          if (slot.isTransmitting) {
+            setSlotPttUi(slotId, "transmitting");
+          } else if (slot.isReceiving && slot.activeBroadcaster) {
+            setSlotPttUi(
+              slotId,
+              "receiving",
+              getPeerDisplayName(slot.activeBroadcaster, slotId),
+            );
+          } else {
+            setSlotPttUi(slotId, "idle");
+          }
+        });
+
+        if (
+          !dualChannelEnabled &&
+          isSpeakerRelayMode() &&
+          speakerRelayActive &&
+          !isRemoteRxActive("A")
+        ) {
+          startSpeakerRelay();
+        }
+      }
+
+      function updateStatusDisplay(state, peerInfo = "", slotId = "A") {
+        if (dualChannelEnabled) {
+          if (state === "transmitting") setSlotPttUi(slotId, "transmitting");
+          else if (state === "receiving")
+            setSlotPttUi(slotId, "receiving", peerInfo);
+          else setSlotPttUi(slotId, "idle");
+          updateCombinedStatus();
+          return;
+        }
+
         switch (state) {
           case "transmitting":
             syncVoxUiState();
@@ -3444,16 +4387,55 @@
                 ? "VOX AKTIF • OTOMATIS BICARA"
                 : "TAHAN UNTUK BICARA";
             syncVoxUiState();
-            if (isSpeakerRelayMode() && speakerRelayActive && !isRemoteRxActive()) {
+            if (isSpeakerRelayMode() && speakerRelayActive && !isRemoteRxActive("A")) {
               startSpeakerRelay();
             }
             break;
         }
       }
 
+      function appendPeerBadgesForSlot(slotId, container) {
+        const slot = getSlot(slotId);
+        const onlinePeers = getOnlinePeerIds(slotId);
+
+        if (dualChannelEnabled) {
+          const header = document.createElement("span");
+          header.className =
+            "w-full text-[10px] font-mono text-amber-400/90 px-1 pt-1";
+          header.textContent = `Saluran ${getSlotChannelLabel(slotId)}`;
+          container.appendChild(header);
+        }
+
+        if (onlinePeers.length === 0) {
+          const emptyHint = document.createElement("span");
+          emptyHint.className = "text-[11px] text-gray-500 italic px-1";
+          emptyHint.textContent = dualChannelEnabled
+            ? "Belum ada anggota"
+            : "Belum ada anggota lain di saluran";
+          container.appendChild(emptyHint);
+          return;
+        }
+
+        onlinePeers.forEach((pId) => {
+          const isSpeaking = slot.activeBroadcaster === pId;
+          const pName = getPeerDisplayName(pId, slotId);
+          const peerBadge = document.createElement("span");
+          peerBadge.className = `px-2 py-0.5 rounded text-[10px] font-mono border flex items-center space-x-1 ${
+            isSpeaking
+              ? "bg-cyan-950 border-cyan-600 text-cyan-300 animate-pulse"
+              : "bg-gray-800 border-gray-700 text-gray-300"
+          }`;
+          peerBadge.innerHTML = `<i class="fa-solid ${isSpeaking ? "fa-walkie-talkie text-cyan-400" : "fa-user"} text-[9px]"></i> <span>${pName}${isSpeaking ? " 📢" : ""}</span>`;
+          container.appendChild(peerBadge);
+        });
+      }
+
       function updatePeersListUI() {
-        const onlinePeers = getOnlinePeerIds();
-        usersCountElem.textContent = `${onlinePeers.length + 1} Online`;
+        let totalOthers = 0;
+        getActiveSlotIds().forEach((slotId) => {
+          totalOthers += getOnlinePeerIds(slotId).length;
+        });
+        usersCountElem.textContent = `${totalOthers + 1} Online`;
 
         peersListElem.innerHTML = "";
 
@@ -3466,28 +4448,180 @@
         myBadge.innerHTML = `<i class="fa-solid fa-user-large text-[9px]"></i> <span>Anda: <strong>${myDisplayName}</strong> (${myShortId})</span>`;
         peersListElem.appendChild(myBadge);
 
-        if (onlinePeers.length === 0) {
-          const emptyHint = document.createElement("span");
-          emptyHint.className =
-            "text-[11px] text-gray-500 italic px-1";
-          emptyHint.textContent = "Belum ada anggota lain di saluran";
-          peersListElem.appendChild(emptyHint);
+        if (dualChannelEnabled) {
+          appendPeerBadgesForSlot("A", peersListElem);
+          appendPeerBadgesForSlot("B", peersListElem);
           return;
         }
 
-        onlinePeers.forEach((pId) => {
-          const isSpeaking = activeBroadcaster === pId;
-          const pName = peerNames.has(pId)
-            ? peerNames.get(pId)
-            : pId.substring(pId.lastIndexOf("-") + 1);
-          const peerBadge = document.createElement("span");
-          peerBadge.className = `px-2 py-0.5 rounded text-[10px] font-mono border flex items-center space-x-1 ${
-            isSpeaking
-              ? "bg-cyan-950 border-cyan-600 text-cyan-300 animate-pulse"
-              : "bg-gray-800 border-gray-700 text-gray-300"
-          }`;
-          peerBadge.innerHTML = `<i class="fa-solid ${isSpeaking ? "fa-walkie-talkie text-cyan-400" : "fa-user"} text-[9px]"></i> <span>${pName}${isSpeaking ? " 📢" : ""}</span>`;
-          peersListElem.appendChild(peerBadge);
+        appendPeerBadgesForSlot("A", peersListElem);
+      }
+
+      function syncDualUiLabels() {
+        const labelA = document.getElementById("ptt-label-a");
+        const labelB = document.getElementById("ptt-label-b");
+        if (labelA) labelA.textContent = `PTT A · ${getSlotChannelLabel("A")}`;
+        if (labelB) labelB.textContent = `PTT B · ${getSlotChannelLabel("B")}`;
+      }
+
+      function syncDualUiMode() {
+        const singleWrap = document.getElementById("ptt-single-wrap");
+        const dualWrap = document.getElementById("ptt-dual-wrap");
+        const hintSingle = document.getElementById("ptt-hint-single");
+        const hintDual = document.getElementById("ptt-hint-dual");
+        const dualBadge = document.getElementById("dual-mode-badge");
+        const statusEl = document.getElementById("dual-current-status");
+
+        if (dualChannelEnabled) {
+          singleWrap?.classList.add("is-hidden");
+          dualWrap?.classList.add("is-active");
+          hintSingle?.classList.add("hidden");
+          hintDual?.classList.remove("hidden");
+          dualBadge?.classList.add("is-active");
+          if (freqDisplay) {
+            const chA = PMR_CHANNELS[currentChannelIdx];
+            const chB = PMR_CHANNELS[slotBChannelIdx];
+            if (chA && chB) {
+              freqDisplay.textContent = `${formatChannelLabel(chA)}  |  ${formatChannelLabel(chB)}`;
+            }
+          }
+        } else {
+          singleWrap?.classList.remove("is-hidden");
+          dualWrap?.classList.remove("is-active");
+          hintSingle?.classList.remove("hidden");
+          hintDual?.classList.add("hidden");
+          dualBadge?.classList.remove("is-active");
+          const ch = PMR_CHANNELS[currentChannelIdx];
+          if (ch) updateChannelDisplayUI(ch);
+        }
+
+        syncDualUiLabels();
+        if (statusEl) {
+          statusEl.textContent = dualChannelEnabled
+            ? `Mode: Dual — A ${getSlotChannelLabel("A")} | B ${getSlotChannelLabel("B")}`
+            : "Mode: Saluran tunggal";
+        }
+      }
+
+      function populateDualChannelSelect() {
+        const select = document.getElementById("dual-channel-b-select");
+        if (!select) return;
+        select.innerHTML = "";
+        PMR_CHANNELS.forEach((ch, idx) => {
+          const opt = document.createElement("option");
+          opt.value = idx;
+          opt.textContent = formatChannelLabel(ch);
+          select.appendChild(opt);
+        });
+        select.value = String(slotBChannelIdx);
+      }
+
+      function openDualSettingsModal() {
+        populateDualChannelSelect();
+        const toggle = document.getElementById("toggle-dual-channel");
+        const panel = document.getElementById("dual-slot-b-panel");
+        if (toggle) toggle.checked = dualChannelEnabled;
+        if (panel) panel.classList.toggle("hidden", !dualChannelEnabled);
+        syncDualUiMode();
+        document.getElementById("modal-dual")?.classList.remove("hidden");
+      }
+
+      async function applyDualChannelSettings() {
+        const toggle = document.getElementById("toggle-dual-channel");
+        const selectB = document.getElementById("dual-channel-b-select");
+        const enabling = !!toggle?.checked;
+        const newBIdx = parseInt(selectB?.value ?? slotBChannelIdx, 10);
+
+        if (enabling && newBIdx === currentChannelIdx) {
+          showToast("Saluran B harus berbeda dari saluran A.", "warning");
+          return;
+        }
+        if (enabling && isSpeakerRelayMode()) {
+          showToast(
+            "Dual saluran tidak tersedia dengan mode Speaker. Ganti ke mic internal.",
+            "warning",
+          );
+          return;
+        }
+
+        const wasDual = dualChannelEnabled;
+        dualChannelEnabled = enabling;
+        slotBChannelIdx = Number.isFinite(newBIdx) ? newBIdx : 1;
+        slotB.channelIdx = slotBChannelIdx;
+        syncSlotBRoomFromIdx();
+        persistAppCache();
+        syncDualUiMode();
+        document.getElementById("modal-dual")?.classList.add("hidden");
+
+        if (!appStarted) {
+          showToast(
+            dualChannelEnabled
+              ? "Dual saluran akan aktif setelah HT terhubung."
+              : "Mode saluran tunggal disimpan.",
+            "info",
+          );
+          return;
+        }
+
+        if (dualChannelEnabled && !wasDual) {
+          await ensureAudioPipelineReady();
+          initPeerConnectionForSlot("B", { skipLeave: true });
+          showToast(
+            `Dual aktif: ${getSlotChannelLabel("A")} + ${getSlotChannelLabel("B")}`,
+            "success",
+          );
+        } else if (!dualChannelEnabled && wasDual) {
+          leaveChannelSlot("B");
+          showToast("Kembali ke mode saluran tunggal.", "info");
+        } else if (dualChannelEnabled) {
+          const ch = PMR_CHANNELS[slotBChannelIdx];
+          await switchToRoomForSlot("B", `PMR-CH-${ch.ch}`);
+          showToast(`Saluran B: ${formatChannelLabel(ch)}`, "info");
+        }
+
+        updateCombinedStatus();
+      }
+
+      function bindPttSlot(btn, slotId) {
+        if (!btn) return;
+        const onStart = (e) => {
+          e.preventDefault();
+          if (!dualChannelEnabled && isSpeakerRelayMode()) return;
+          startTransmitting(slotId);
+        };
+        const onStop = (e) => {
+          e.preventDefault();
+          if (!dualChannelEnabled && isSpeakerRelayMode()) return;
+          stopTransmitting(false, {}, slotId);
+        };
+        btn.addEventListener("mousedown", onStart);
+        btn.addEventListener("mouseup", onStop);
+        btn.addEventListener("mouseleave", onStop);
+        btn.addEventListener("touchstart", onStart, { passive: false });
+        btn.addEventListener("touchend", onStop, { passive: false });
+        btn.addEventListener("touchcancel", onStop, { passive: false });
+        btn.addEventListener("contextmenu", (e) => e.preventDefault());
+      }
+
+      function setupDualListeners() {
+        document.getElementById("btn-open-dual")?.addEventListener("click", () => {
+          openDualSettingsModal();
+        });
+        document.getElementById("btn-close-dual")?.addEventListener("click", () => {
+          document.getElementById("modal-dual")?.classList.add("hidden");
+        });
+        document.getElementById("btn-save-dual")?.addEventListener("click", () => {
+          applyDualChannelSettings();
+        });
+        document.getElementById("toggle-dual-channel")?.addEventListener("change", (e) => {
+          document
+            .getElementById("dual-slot-b-panel")
+            ?.classList.toggle("hidden", !e.target.checked);
+        });
+        document.getElementById("modal-dual")?.addEventListener("click", (e) => {
+          if (e.target.id === "modal-dual") {
+            document.getElementById("modal-dual").classList.add("hidden");
+          }
         });
       }
 
@@ -3503,68 +4637,73 @@
       }
 
       function setupEventListeners() {
-        // PTT Button Events (Touch & Mouse)
-        pttBtn.addEventListener("mousedown", (e) => {
-          e.preventDefault();
-          if (!isSpeakerRelayMode()) startTransmitting();
-        });
-        pttBtn.addEventListener("mouseup", (e) => {
-          e.preventDefault();
-          if (!isSpeakerRelayMode()) stopTransmitting();
-        });
-        pttBtn.addEventListener("mouseleave", (e) => {
-          e.preventDefault();
-          if (!isSpeakerRelayMode()) stopTransmitting();
-        });
+        bindPttSlot(pttBtn, "A");
+        bindPttSlot(pttBtnA, "A");
+        bindPttSlot(pttBtnB, "B");
 
-        pttBtn.addEventListener("touchstart", (e) => {
-          e.preventDefault();
-          if (!isSpeakerRelayMode()) startTransmitting();
-        });
-        pttBtn.addEventListener("touchend", (e) => {
-          e.preventDefault();
-          if (!isSpeakerRelayMode()) stopTransmitting();
-        });
-        pttBtn.addEventListener("touchcancel", (e) => {
-          e.preventDefault();
-          if (!isSpeakerRelayMode()) stopTransmitting();
-        });
-
-        // Prevent mobile context menu on long press
-        pttBtn.addEventListener("contextmenu", (e) => {
-          e.preventDefault();
-        });
-
-        // Keyboard Controls (Spacebar & 'T' key hold to talk)
+        // Keyboard Controls — dual: Space=A, T=B; single: Space/T = A
         window.addEventListener("keydown", (e) => {
           if (
-            (e.code === "Space" || e.code === "KeyT") &&
-            !e.repeat &&
-            document.activeElement.tagName !== "INPUT" &&
-            document.activeElement.tagName !== "SELECT"
+            document.activeElement.tagName === "INPUT" ||
+            document.activeElement.tagName === "SELECT" ||
+            document.activeElement.tagName === "TEXTAREA"
           ) {
+            return;
+          }
+          if (e.repeat) return;
+
+          if (dualChannelEnabled) {
+            if (e.code === "Space") {
+              e.preventDefault();
+              startTransmitting("A");
+            } else if (e.code === "KeyT") {
+              e.preventDefault();
+              startTransmitting("B");
+            }
+            return;
+          }
+
+          if (e.code === "Space" || e.code === "KeyT") {
             e.preventDefault();
-            if (!isSpeakerRelayMode()) startTransmitting();
+            if (!isSpeakerRelayMode()) startTransmitting("A");
           }
         });
 
         window.addEventListener("keyup", (e) => {
           if (
-            (e.code === "Space" || e.code === "KeyT") &&
-            document.activeElement.tagName !== "INPUT" &&
-            document.activeElement.tagName !== "SELECT"
+            document.activeElement.tagName === "INPUT" ||
+            document.activeElement.tagName === "SELECT" ||
+            document.activeElement.tagName === "TEXTAREA"
           ) {
+            return;
+          }
+
+          if (dualChannelEnabled) {
+            if (e.code === "Space") {
+              e.preventDefault();
+              stopTransmitting(false, {}, "A");
+            } else if (e.code === "KeyT") {
+              e.preventDefault();
+              stopTransmitting(false, {}, "B");
+            }
+            return;
+          }
+
+          if (e.code === "Space" || e.code === "KeyT") {
             e.preventDefault();
-            if (!isSpeakerRelayMode()) stopTransmitting();
+            if (!isSpeakerRelayMode()) stopTransmitting(false, {}, "A");
           }
         });
 
-        // Handle window blur — hanya hentikan PTT manual, bukan VOX / relay speaker
+        // Handle window blur — hentikan semua PTT manual
         window.addEventListener("blur", () => {
-          if (isSpeakerRelayMode()) return;
-          if (isTransmitting && !voxAutoTriggered) {
-            stopTransmitting();
-          }
+          if (isSpeakerRelayMode() && !dualChannelEnabled) return;
+          getActiveSlotIds().forEach((slotId) => {
+            const slot = getSlot(slotId);
+            if (slot.isTransmitting && !voxAutoTriggered) {
+              stopTransmitting(false, {}, slotId);
+            }
+          });
         });
 
         // Channel Switching via Dropdown & Chevron buttons
@@ -3582,6 +4721,10 @@
 
         // VOX Auto Transmit Toggle
         document.getElementById("toggle-vox").addEventListener("click", () => {
+          if (dualChannelEnabled) {
+            showToast("VOX nonaktif saat mode dual saluran.", "info");
+            return;
+          }
           if (isSpeakerRelayMode()) {
             showToast(
               "VOX tidak tersedia di mode Speaker. Pilih mic internal untuk PTT gantian.",
@@ -3677,6 +4820,8 @@
         // PWA Install
         setupPwaInstall();
         setupMicSettingsListeners();
+        setupEmojiListeners();
+        setupDualListeners();
 
         // Username Modal Listeners
         document.getElementById("btn-save-username").addEventListener("click", handleSaveUsername);
@@ -3771,7 +4916,8 @@
 
         playSquelchNoise(0.05);
         await switchToRoom(`PMR-CH-${chObj.ch}`);
-        showToast(`Pindah ke ${formatChannelLabel(chObj)}`, "info");
+        if (dualChannelEnabled) syncDualUiMode();
+        showToast(`Pindah ke ${formatChannelLabel(chObj)} (PTT A)`, "info");
       }
 
       // --- Username Modal & Operator Identity Flow ---
@@ -3791,6 +4937,19 @@
         appStarted = true;
         initPeerConnection({ skipLeave: true });
         await waitForPeerOpen();
+        if (dualChannelEnabled) {
+          setBootProgress(85, "Menghubungkan saluran B...");
+          await new Promise((resolve) => {
+            const timeout = setTimeout(resolve, 8000);
+            const check = setInterval(() => {
+              if (slotB.peer?.open) {
+                clearInterval(check);
+                clearTimeout(timeout);
+                resolve(true);
+              }
+            }, 100);
+          });
+        }
 
         setBootProgress(90, "Menyiapkan layanan latar...");
         await requestWakeLock();
@@ -3801,6 +4960,7 @@
 
         setBootProgress(100, "Sistem siap!");
         hideBootOverlay();
+        syncDualUiMode();
         applyMicSourceModeBehavior();
         if (micStream && !isSpeakerRelayMode()) {
           setupVisualizerSource(micStream);
@@ -3842,10 +5002,11 @@
         updateMyDisplayCallsign();
 
         if (peer && peer.open) {
-          // Update peers via PeerJS Data Connection
-          broadcastData({ type: "UPDATE_NAME", displayName: myDisplayName });
-          // Update peers via MQTT Signaling
-          sendMqttPresence("ANNOUNCE");
+          broadcastDataAllSlots({
+            type: "UPDATE_NAME",
+            displayName: myDisplayName,
+          });
+          sendMqttPresenceAll("ANNOUNCE");
           updatePeersListUI();
           showToast(`Nama diubah menjadi: ${myDisplayName}`, "success");
         } else {
@@ -3873,6 +5034,10 @@
         txRxBadge = document.getElementById("tx-rx-badge");
         pttBtn = document.getElementById("ptt-button");
         pttSubtext = document.getElementById("ptt-subtext");
+        pttBtnA = document.getElementById("ptt-button-a");
+        pttBtnB = document.getElementById("ptt-button-b");
+        pttSubtextA = document.getElementById("ptt-subtext-a");
+        pttSubtextB = document.getElementById("ptt-subtext-b");
         freqDisplay = document.getElementById("freq-display");
         channelNumDisplay = document.getElementById("channel-num-display");
         chSelectElem = document.getElementById("channel-select");
@@ -3916,6 +5081,8 @@
         setBootProgress(15, "Memuat cache pengaturan...");
         applyAppCache();
         populateChannelDropdown();
+        populateDualChannelSelect();
+        syncSlotBRoomFromIdx();
 
         setBootProgress(30, "Menyiapkan antarmuka...");
         setupEventListeners();
