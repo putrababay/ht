@@ -12,8 +12,9 @@
     <meta name="theme-color" content="#030712" />
     <meta
       name="description"
-      content="Aplikasi HT Push-to-Talk Realtime berbasis WebRTC PWA"
+      content="Aplikasi HT Push-to-Talk Realtime berbasis WebRTC PWA — Tactical HT untuk komunikasi PMR online."
     />
+    <meta name="application-name" content="Tactical HT" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
@@ -21,16 +22,12 @@
       content="black-translucent"
     />
     <meta name="apple-mobile-web-app-title" content="Tactical HT" />
-    <link
-      rel="apple-touch-icon"
-      href="./icon-512.png"
-    />
+    <link rel="canonical" href="https://ptt.sibag.us/" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="apple-touch-icon" href="/icon-512.png" />
 
     <!-- Web App Manifest -->
-    <link
-      rel="manifest"
-      href="./manifest.json"
-    />
+    <link rel="manifest" href="/manifest.json" />
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -138,6 +135,12 @@
             <span>Install App</span>
           </button>
           <span
+            id="wakelock-badge"
+            class="hidden text-[9px] font-mono bg-blue-950 border border-blue-700 text-blue-300 px-1 py-0.5 rounded"
+            title="Layar aktif (Wake Lock)"
+            ><i class="fa-solid fa-lock-open"></i>
+          </span>
+          <span
             id="led-indicator"
             class="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse"
           ></span>
@@ -146,6 +149,13 @@
             class="text-[10px] font-mono font-bold text-emerald-400"
             >READY</span
           >
+          <button
+            id="btn-power-off"
+            class="w-7 h-7 rounded-full bg-rose-900/60 hover:bg-rose-700 border border-rose-700 text-rose-400 hover:text-white flex items-center justify-center transition-colors"
+            title="Matikan HT"
+          >
+            <i class="fa-solid fa-power-off text-[11px]"></i>
+          </button>
         </div>
       </div>
 
@@ -158,14 +168,29 @@
           <div
             class="flex justify-between items-center text-xs font-mono border-b border-emerald-900/60 pb-1"
           >
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-2 min-w-0">
               <span id="battery-icon"
                 ><i class="fa-solid fa-battery-full"></i
               ></span>
-              <span id="rssi-display"
-                ><i class="fa-solid fa-signal"></i> CH:
-                <strong id="channel-num-display">01</strong></span
-              >
+              <span
+                id="network-quality-dot"
+                class="w-2 h-2 rounded-full bg-yellow-400 shrink-0"
+                title="Kualitas jaringan"
+              ></span>
+              <span id="rssi-display" class="flex items-center space-x-1 truncate">
+                <i
+                  id="rssi-signal-icon"
+                  class="fa-solid fa-signal text-emerald-400"
+                ></i>
+                <span
+                  >CH:
+                  <strong id="channel-num-display">01</strong></span
+                >
+                <span class="text-[10px] text-emerald-500 whitespace-nowrap">
+                  <span id="speed-down">↓--</span>
+                  <span id="speed-up" class="ml-1">↑--</span>
+                </span>
+              </span>
             </div>
             <div class="flex items-center space-x-2">
               <span
@@ -414,7 +439,14 @@
           class="hidden mt-3 text-center text-xs text-rose-400 bg-rose-950/60 p-2 rounded border border-rose-800"
         >
           <i class="fa-solid fa-triangle-exclamation mr-1"></i> Izin mikrofon
-          diperlukan. Harap izinkan di browser.
+          diperlukan.
+          <button
+            id="btn-mic-retry"
+            type="button"
+            class="block mx-auto mt-2 px-3 py-1 bg-rose-800 hover:bg-rose-700 text-white rounded text-[11px] font-bold"
+          >
+            <i class="fa-solid fa-microphone mr-1"></i> Izinkan Mikrofon
+          </button>
         </div>
       </div>
 
@@ -572,10 +604,72 @@
       </div>
     </div>
 
+    <!-- Power Off Confirmation Modal -->
+    <div
+      id="modal-poweroff"
+      class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-gray-900 border-2 border-rose-700/80 rounded-2xl w-full max-w-xs p-5 text-gray-200 shadow-2xl text-center"
+      >
+        <div class="inline-flex p-3 bg-rose-500/10 rounded-full text-rose-500 mb-3 border border-rose-500/20">
+          <i class="fa-solid fa-power-off text-2xl"></i>
+        </div>
+        <h3 class="font-extrabold text-rose-400 text-base tracking-wider uppercase mb-1">
+          Matikan HT?
+        </h3>
+        <p class="text-[11px] text-gray-400 mb-5">
+          Semua koneksi aktif akan diputus dan mikrofon akan dilepas.
+        </p>
+        <div class="flex space-x-3">
+          <button
+            id="btn-poweroff-cancel"
+            class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs py-2 rounded-lg border border-gray-700"
+          >
+            Batal
+          </button>
+          <button
+            id="btn-poweroff-confirm"
+            class="flex-1 bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs py-2 rounded-lg border border-rose-600"
+          >
+            <i class="fa-solid fa-power-off mr-1"></i> Matikan
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Powered Off Overlay -->
+    <div
+      id="overlay-powered-off"
+      class="hidden fixed inset-0 bg-black z-[60] flex flex-col items-center justify-center p-6"
+    >
+      <div class="text-center">
+        <div
+          class="inline-flex p-4 bg-gray-900 rounded-full border-2 border-gray-800 mb-4"
+        >
+          <i class="fa-solid fa-power-off text-4xl text-gray-600"></i>
+        </div>
+        <h2 class="text-gray-500 font-extrabold text-lg tracking-widest uppercase mb-1">
+          HT MATI
+        </h2>
+        <p class="text-gray-600 text-xs font-mono mb-6">
+          Tekan tombol power untuk menyalakan kembali
+        </p>
+        <button
+          id="btn-power-on"
+          type="button"
+          class="px-8 py-3 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded-full border-2 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all active:scale-95"
+        >
+          <i class="fa-solid fa-power-off mr-2"></i> Nyalakan HT
+        </button>
+      </div>
+    </div>
+
     <div
       id="toast-container"
       class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center space-y-2 pointer-events-none"
     ></div>
+
 
     <script>
       // --- 16 PMR446 Tactical Channels ---
@@ -609,6 +703,7 @@
       let activeCalls = new Map();
       let connectedPeersInfo = new Set();
       let activeBroadcaster = null;
+      const remoteAudioElements = new Map();
 
       // Global Online Signaling State (MQTT)
       let mqttClient = null;
@@ -648,6 +743,39 @@
       let customTurnConfig = { url: "", username: "", password: "" };
       let deferredPwaPrompt = null;
 
+      // PWA Configuration
+      const PWA_ORIGIN = "https://ptt.sibag.us";
+
+      function isPwaStandalone() {
+        return (
+          window.matchMedia("(display-mode: standalone)").matches ||
+          window.navigator.standalone === true
+        );
+      }
+
+      function getShareBaseUrl() {
+        if (
+          window.location.origin === PWA_ORIGIN ||
+          window.location.hostname.endsWith("sibag.us")
+        ) {
+          return window.location.origin;
+        }
+        return PWA_ORIGIN;
+      }
+
+      // Wake Lock & Background Keep-Alive State
+      let wakeLockSentinel = null;
+      let appPoweredOff = false;
+      let keepAliveOscillator = null;
+      let keepAliveGain = null;
+      let micPermissionStatus = null;
+      const MIC_PERMISSION_KEY = "ht_mic_permission_granted";
+
+      // Network Monitor State
+      let networkMonitorInterval = null;
+      let lastRtcStats = { rxBytes: 0, txBytes: 0, ts: 0 };
+      let networkQualityLevel = 0;
+
       // --- DOM References ---
       let myPeerIdElem,
         usersCountElem,
@@ -669,6 +797,192 @@
         voxStatusElem,
         voxControlPanel;
       let voxSensSlider, voxSensLabel, voxLevelBar, voxThresholdMarker;
+      let speedDownElem, speedUpElem, networkQualityDotElem, rssiSignalIconElem;
+
+      function formatBitrate(bps) {
+        if (!bps || bps <= 0 || !Number.isFinite(bps)) return "--";
+        if (bps >= 1_000_000) return `${(bps / 1_000_000).toFixed(1)}M`;
+        return `${Math.round(bps / 1000)}K`;
+      }
+
+      function getNetworkConnection() {
+        return (
+          navigator.connection ||
+          navigator.mozConnection ||
+          navigator.webkitConnection ||
+          null
+        );
+      }
+
+      function qualityFromMetrics({ rtt, packetLoss, downlinkMbps }) {
+        let score = 100;
+
+        if (rtt != null) {
+          if (rtt > 400) score -= 50;
+          else if (rtt > 200) score -= 30;
+          else if (rtt > 100) score -= 15;
+        }
+
+        if (packetLoss != null) {
+          if (packetLoss > 5) score -= 40;
+          else if (packetLoss > 2) score -= 25;
+          else if (packetLoss > 0.5) score -= 10;
+        }
+
+        if (downlinkMbps != null) {
+          if (downlinkMbps < 0.5) score -= 35;
+          else if (downlinkMbps < 1) score -= 20;
+          else if (downlinkMbps < 2) score -= 10;
+        }
+
+        if (score >= 65) return { level: 3, traffic: "green" };
+        if (score >= 40) return { level: 2, traffic: "yellow" };
+        return { level: 1, traffic: "red" };
+      }
+
+      function updateNetworkQualityUI(quality, downBps, upBps) {
+        const traffic = quality.traffic || "yellow";
+        const dotColors = {
+          green: "bg-emerald-400",
+          yellow: "bg-yellow-400",
+          red: "bg-red-500",
+          gray: "bg-gray-500",
+        };
+        const signalColors = {
+          green: "text-emerald-400",
+          yellow: "text-yellow-400",
+          red: "text-red-500",
+          gray: "text-gray-500",
+        };
+
+        networkQualityLevel = quality.level;
+
+        if (networkQualityDotElem) {
+          networkQualityDotElem.className = `w-2 h-2 rounded-full shrink-0 ${dotColors[traffic]}`;
+        }
+        if (rssiSignalIconElem) {
+          rssiSignalIconElem.className = `fa-solid fa-signal ${signalColors[traffic]}`;
+        }
+        if (speedDownElem) speedDownElem.textContent = `↓${formatBitrate(downBps)}`;
+        if (speedUpElem) speedUpElem.textContent = `↑${formatBitrate(upBps)}`;
+      }
+
+      async function collectWebRtcNetworkStats() {
+        let totalRx = 0;
+        let totalTx = 0;
+        let rtt = null;
+        let packetsLost = 0;
+        let packetsReceived = 0;
+
+        for (const call of activeCalls.values()) {
+          const pc = call.peerConnection || call._pc;
+          if (!pc || pc.connectionState === "closed") continue;
+
+          try {
+            const stats = await pc.getStats();
+            stats.forEach((report) => {
+              if (
+                report.type === "candidate-pair" &&
+                (report.state === "succeeded" || report.nominated)
+              ) {
+                if (report.currentRoundTripTime != null) {
+                  rtt = Math.max(rtt || 0, report.currentRoundTripTime * 1000);
+                }
+              }
+              if (report.type === "inbound-rtp" && report.kind === "audio") {
+                totalRx += report.bytesReceived || 0;
+                packetsLost += report.packetsLost || 0;
+                packetsReceived += report.packetsReceived || 0;
+              }
+              if (report.type === "outbound-rtp" && report.kind === "audio") {
+                totalTx += report.bytesSent || 0;
+              }
+            });
+          } catch (e) {
+            console.warn("Gagal membaca WebRTC stats:", e);
+          }
+        }
+
+        const now = Date.now();
+        let downBps = 0;
+        let upBps = 0;
+
+        if (lastRtcStats.ts > 0) {
+          const elapsed = (now - lastRtcStats.ts) / 1000;
+          if (elapsed > 0) {
+            downBps = Math.max(0, ((totalRx - lastRtcStats.rxBytes) * 8) / elapsed);
+            upBps = Math.max(0, ((totalTx - lastRtcStats.txBytes) * 8) / elapsed);
+          }
+        }
+
+        lastRtcStats = { rxBytes: totalRx, txBytes: totalTx, ts: now };
+
+        const packetLoss =
+          packetsReceived > 0
+            ? (packetsLost / (packetsLost + packetsReceived)) * 100
+            : null;
+
+        return { downBps, upBps, rtt, packetLoss, hasRtc: activeCalls.size > 0 };
+      }
+
+      async function refreshNetworkStatus() {
+        if (appPoweredOff) return;
+
+        const netConn = getNetworkConnection();
+        let downBps = 0;
+        let upBps = 0;
+        let rtt = netConn?.rtt ?? null;
+        let downlinkMbps = netConn?.downlink ?? null;
+        let packetLoss = null;
+
+        const rtcStats = await collectWebRtcNetworkStats();
+        if (rtcStats.hasRtc) {
+          if (rtcStats.downBps > 0) downBps = rtcStats.downBps;
+          if (rtcStats.upBps > 0) upBps = rtcStats.upBps;
+          if (rtcStats.rtt != null) rtt = rtcStats.rtt;
+          if (rtcStats.packetLoss != null) packetLoss = rtcStats.packetLoss;
+        } else if (netConn?.downlink) {
+          downBps = netConn.downlink * 1_000_000;
+        }
+
+        const mqttOnline = mqttClient?.connected === true;
+        const peerOnline = peer?.open === true;
+
+        if (!navigator.onLine) {
+          updateNetworkQualityUI({ level: 0, traffic: "red" }, 0, 0);
+          return;
+        }
+
+        if (!peerOnline && !mqttOnline) {
+          updateNetworkQualityUI({ level: 1, traffic: "yellow" }, downBps, upBps);
+          return;
+        }
+
+        const quality = qualityFromMetrics({ rtt, packetLoss, downlinkMbps });
+        updateNetworkQualityUI(quality, downBps, upBps);
+      }
+
+      function startNetworkMonitor() {
+        stopNetworkMonitor();
+        lastRtcStats = { rxBytes: 0, txBytes: 0, ts: 0 };
+        refreshNetworkStatus();
+        networkMonitorInterval = setInterval(refreshNetworkStatus, 2000);
+
+        const netConn = getNetworkConnection();
+        if (netConn) {
+          netConn.addEventListener("change", refreshNetworkStatus);
+        }
+        window.addEventListener("online", refreshNetworkStatus);
+        window.addEventListener("offline", refreshNetworkStatus);
+      }
+
+      function stopNetworkMonitor() {
+        if (networkMonitorInterval) {
+          clearInterval(networkMonitorInterval);
+          networkMonitorInterval = null;
+        }
+        lastRtcStats = { rxBytes: 0, txBytes: 0, ts: 0 };
+      }
 
       // Toast Notification Handler
       function showToast(message, type = "info") {
@@ -761,9 +1075,74 @@
         whiteNoise.start();
       }
 
-      // --- Microphone & Audio Processing Pipeline ---
-      async function setupMicrophone() {
+      // --- Microphone Permission (sekali izin, pakai terus) ---
+      async function queryMicPermission() {
+        if (!navigator.permissions?.query) return "unknown";
         try {
+          const status = await navigator.permissions.query({ name: "microphone" });
+          micPermissionStatus = status;
+          status.onchange = () => {
+            if (status.state === "granted") {
+              localStorage.setItem(MIC_PERMISSION_KEY, "true");
+            } else if (status.state === "denied") {
+              localStorage.removeItem(MIC_PERMISSION_KEY);
+              releaseMicrophone();
+              micWarning.classList.remove("hidden");
+            }
+          };
+          return status.state;
+        } catch {
+          return "unknown";
+        }
+      }
+
+      function isMicStreamActive() {
+        return (
+          micStream &&
+          micTrack &&
+          micTrack.readyState === "live" &&
+          !micTrack.muted
+        );
+      }
+
+      function releaseMicrophone() {
+        if (micStream) {
+          micStream.getTracks().forEach((t) => t.stop());
+          micStream = null;
+          micTrack = null;
+        }
+        if (micSourceNode) {
+          try {
+            micSourceNode.disconnect();
+          } catch (e) {}
+          micSourceNode = null;
+        }
+      }
+
+      // --- Microphone & Audio Processing Pipeline ---
+      async function setupMicrophone(forceRequest = false) {
+        if (appPoweredOff) return false;
+
+        if (!forceRequest && isMicStreamActive()) {
+          micWarning.classList.add("hidden");
+          return true;
+        }
+
+        const permState = await queryMicPermission();
+        if (permState === "denied") {
+          micWarning.classList.remove("hidden");
+          showToast(
+            "Izin mikrofon ditolak. Aktifkan di pengaturan browser.",
+            "warning",
+          );
+          return false;
+        }
+
+        try {
+          if (micStream) {
+            releaseMicrophone();
+          }
+
           micStream = await navigator.mediaDevices.getUserMedia({
             audio: {
               echoCancellation: true,
@@ -774,17 +1153,212 @@
           });
 
           micTrack = micStream.getAudioTracks()[0];
-          micTrack.enabled = true; // Keep active for VOX analysis
+          micTrack.enabled = true;
+          micTrack.onended = () => {
+            micWarning.classList.remove("hidden");
+            showToast("Akses mikrofon terputus.", "warning");
+          };
+
+          localStorage.setItem(MIC_PERMISSION_KEY, "true");
           micWarning.classList.add("hidden");
 
           initAudioContext();
           setupOutgoingAudioGraph(micStream);
           setupVisualizerSource(micStream);
           setupVoxAnalyser(micStream);
+          return true;
         } catch (err) {
           console.error("Gagal mengakses mikrofon:", err);
+          localStorage.removeItem(MIC_PERMISSION_KEY);
           micWarning.classList.remove("hidden");
+          return false;
         }
+      }
+
+      // --- Wake Lock: layar tetap aktif saat HT menyala ---
+      async function requestWakeLock() {
+        if (appPoweredOff || !("wakeLock" in navigator)) return;
+        try {
+          wakeLockSentinel = await navigator.wakeLock.request("screen");
+          document.getElementById("wakelock-badge")?.classList.remove("hidden");
+          wakeLockSentinel.addEventListener("release", () => {
+            wakeLockSentinel = null;
+            document.getElementById("wakelock-badge")?.classList.add("hidden");
+          });
+        } catch (err) {
+          console.warn("Wake Lock tidak tersedia:", err);
+        }
+      }
+
+      async function releaseWakeLock() {
+        if (wakeLockSentinel) {
+          try {
+            await wakeLockSentinel.release();
+          } catch (e) {}
+          wakeLockSentinel = null;
+        }
+        document.getElementById("wakelock-badge")?.classList.add("hidden");
+      }
+
+      // --- Background Keep-Alive: HT tetap jalan saat layar mati ---
+      function startBackgroundKeepAlive() {
+        if (appPoweredOff || keepAliveOscillator) return;
+        initAudioContext();
+
+        keepAliveOscillator = audioCtx.createOscillator();
+        keepAliveGain = audioCtx.createGain();
+        keepAliveGain.gain.value = 0.001;
+        keepAliveOscillator.frequency.value = 1;
+        keepAliveOscillator.connect(keepAliveGain);
+        keepAliveGain.connect(audioCtx.destination);
+        keepAliveOscillator.start();
+
+        if ("mediaSession" in navigator) {
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: "Tactical HT",
+            artist: "Push-to-Talk Aktif",
+            album: roomName,
+          });
+          navigator.mediaSession.playbackState = "playing";
+        }
+      }
+
+      function stopBackgroundKeepAlive() {
+        if (keepAliveOscillator) {
+          try {
+            keepAliveOscillator.stop();
+            keepAliveOscillator.disconnect();
+          } catch (e) {}
+          keepAliveOscillator = null;
+        }
+        if (keepAliveGain) {
+          try {
+            keepAliveGain.disconnect();
+          } catch (e) {}
+          keepAliveGain = null;
+        }
+        if ("mediaSession" in navigator) {
+          navigator.mediaSession.playbackState = "none";
+        }
+      }
+
+      function setupVisibilityHandlers() {
+        document.addEventListener("visibilitychange", async () => {
+          if (appPoweredOff) return;
+
+          if (document.visibilityState === "visible") {
+            initAudioContext();
+            if (audioCtx?.state === "suspended") await audioCtx.resume();
+            if (!wakeLockSentinel) await requestWakeLock();
+            if (
+              !isMicStreamActive() &&
+              localStorage.getItem(MIC_PERMISSION_KEY) === "true"
+            ) {
+              await setupMicrophone();
+            }
+          } else {
+            startBackgroundKeepAlive();
+            if (audioCtx?.state === "suspended") await audioCtx.resume();
+          }
+        });
+      }
+
+      function teardownConnections() {
+        if (isTransmitting) stopTransmitting();
+
+        activeCalls.forEach((call) => {
+          try {
+            call.close();
+          } catch (e) {}
+        });
+        activeCalls.clear();
+
+        dataConnections.forEach((conn) => {
+          try {
+            conn.close();
+          } catch (e) {}
+        });
+        dataConnections.clear();
+        connectedPeersInfo.clear();
+        peerNames.clear();
+        activeBroadcaster = null;
+
+        remoteAudioElements.forEach((el) => {
+          el.pause();
+          el.srcObject = null;
+          el.remove();
+        });
+        remoteAudioElements.clear();
+
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval);
+          heartbeatInterval = null;
+        }
+        if (mqttClient) {
+          try {
+            sendMqttPresence("LEAVE");
+            mqttClient.end(true);
+          } catch (e) {}
+          mqttClient = null;
+        }
+        if (peer) {
+          try {
+            peer.destroy();
+          } catch (e) {}
+          peer = null;
+        }
+        myPeerId = "";
+      }
+
+      async function powerOffApp() {
+        appPoweredOff = true;
+        appStarted = false;
+
+        stopBackgroundKeepAlive();
+        await releaseWakeLock();
+        stopNetworkMonitor();
+        updateNetworkQualityUI({ level: 0, traffic: "gray" }, 0, 0);
+        teardownConnections();
+        releaseMicrophone();
+
+        if (audioCtx) {
+          try {
+            await audioCtx.close();
+          } catch (e) {}
+          audioCtx = null;
+        }
+
+        if (visualizerAnimFrame) cancelAnimationFrame(visualizerAnimFrame);
+        if (voxAnimFrame) cancelAnimationFrame(voxAnimFrame);
+
+        document.getElementById("modal-poweroff").classList.add("hidden");
+        document.getElementById("overlay-powered-off").classList.remove("hidden");
+        updateStatusDisplay("idle");
+        usersCountElem.textContent = "0 Online";
+        peersListElem.innerHTML =
+          '<span class="text-[11px] text-gray-500 italic">HT dimatikan</span>';
+        showToast("HT dimatikan.", "info");
+      }
+
+      async function powerOnApp() {
+        appPoweredOff = false;
+        document.getElementById("overlay-powered-off").classList.add("hidden");
+
+        const micOk = await setupMicrophone();
+        if (!micOk) {
+          appPoweredOff = true;
+          document
+            .getElementById("overlay-powered-off")
+            .classList.remove("hidden");
+          return;
+        }
+
+        initPeerConnection();
+        await requestWakeLock();
+        startBackgroundKeepAlive();
+        startNetworkMonitor();
+        appStarted = true;
+        showToast("HT dinyalakan — siap komunikasi!", "success");
       }
 
       function setupOutgoingAudioGraph(stream) {
@@ -1278,17 +1852,18 @@
       }
 
       // --- Remote Audio Playback ---
-      const remoteAudioElements = new Map();
-
       function playRemoteAudio(stream, peerId) {
         let audioEl = remoteAudioElements.get(peerId);
         if (!audioEl) {
           audioEl = document.createElement("audio");
           audioEl.autoplay = true;
+          audioEl.playsInline = true;
+          audioEl.setAttribute("playsinline", "");
           document.body.appendChild(audioEl);
           remoteAudioElements.set(peerId, audioEl);
         }
         audioEl.srcObject = stream;
+        audioEl.play().catch(() => {});
       }
 
       function stopRemoteAudio(peerId) {
@@ -1326,9 +1901,9 @@
         if (isTransmitting || isReceiving) return;
         initAudioContext();
 
-        if (!micStream) {
-          setupMicrophone().then(() => {
-            executePTTStart();
+        if (!isMicStreamActive()) {
+          setupMicrophone().then((ok) => {
+            if (ok) executePTTStart();
           });
           return;
         }
@@ -1509,9 +2084,9 @@
           }
         });
 
-        // Handle window blur to automatically stop transmission
+        // Handle window blur — hanya hentikan PTT manual, bukan VOX
         window.addEventListener("blur", () => {
-          if (isTransmitting) {
+          if (isTransmitting && !voxAutoTriggered) {
             stopTransmitting();
           }
         });
@@ -1638,7 +2213,7 @@
         // Share Room Button
         document.getElementById("btn-share").addEventListener("click", () => {
           const shareUrl =
-            window.location.origin +
+            getShareBaseUrl() +
             window.location.pathname +
             `?room=${encodeURIComponent(roomName)}`;
           if (navigator.clipboard) {
@@ -1688,22 +2263,70 @@
         document.getElementById("my-peer-id").addEventListener("click", () => {
           showUsernameModal();
         });
+
+        // Power Off / On
+        document.getElementById("btn-power-off").addEventListener("click", () => {
+          document.getElementById("modal-poweroff").classList.remove("hidden");
+        });
+        document
+          .getElementById("btn-poweroff-cancel")
+          .addEventListener("click", () => {
+            document.getElementById("modal-poweroff").classList.add("hidden");
+          });
+        document
+          .getElementById("btn-poweroff-confirm")
+          .addEventListener("click", () => {
+            powerOffApp();
+          });
+        document.getElementById("btn-power-on").addEventListener("click", () => {
+          powerOnApp();
+        });
+
+        // Mic permission retry
+        document.getElementById("btn-mic-retry").addEventListener("click", async () => {
+          const ok = await setupMicrophone(true);
+          if (ok && !appStarted && !appPoweredOff) {
+            initPeerConnection();
+            await requestWakeLock();
+            startBackgroundKeepAlive();
+            appStarted = true;
+          }
+        });
       }
 
       // Service Worker registration for PWA
       function registerPwaServiceWorker() {
-        if ("serviceWorker" in navigator) {
-          window.addEventListener("load", () => {
-            navigator.serviceWorker
-              .register("./sw.js")
-              .then((reg) => {
-                console.log("Service Worker registered successfully with scope:", reg.scope);
-              })
-              .catch((err) => {
-                console.error("Service Worker registration failed:", err);
+        if (!("serviceWorker" in navigator)) return;
+
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js", { scope: "/" })
+            .then((reg) => {
+              console.log(
+                "Service Worker registered with scope:",
+                reg.scope,
+              );
+
+              reg.addEventListener("updatefound", () => {
+                const newWorker = reg.installing;
+                if (!newWorker) return;
+                newWorker.addEventListener("statechange", () => {
+                  if (
+                    newWorker.state === "installed" &&
+                    navigator.serviceWorker.controller
+                  ) {
+                    showToast(
+                      "Pembaruan HT tersedia. Muat ulang untuk versi terbaru.",
+                      "info",
+                    );
+                  }
+                });
               });
-          });
-        }
+            })
+            .catch((err) => {
+              console.error("Service Worker registration failed:", err);
+            });
+        });
       }
 
       function changeChannel(delta) {
@@ -1734,11 +2357,18 @@
       let appStarted = false;
 
       async function startAppFlow() {
-        if (appStarted) return;
-        appStarted = true;
+        if (appStarted || appPoweredOff) return;
 
-        await setupMicrophone();
+        const micOk = await setupMicrophone();
+        if (!micOk) {
+          return;
+        }
+
+        appStarted = true;
         initPeerConnection();
+        await requestWakeLock();
+        startBackgroundKeepAlive();
+        startNetworkMonitor();
       }
 
       function showUsernameModal() {
@@ -1813,6 +2443,10 @@
         voxSensLabel = document.getElementById("vox-sens-label");
         voxLevelBar = document.getElementById("vox-level-bar");
         voxThresholdMarker = document.getElementById("vox-threshold-marker");
+        speedDownElem = document.getElementById("speed-down");
+        speedUpElem = document.getElementById("speed-up");
+        networkQualityDotElem = document.getElementById("network-quality-dot");
+        rssiSignalIconElem = document.getElementById("rssi-signal-icon");
 
         populateChannelDropdown();
 
@@ -1825,6 +2459,12 @@
 
         setupEventListeners();
         registerPwaServiceWorker();
+        setupVisibilityHandlers();
+        startNetworkMonitor();
+
+        if (isPwaStandalone()) {
+          showToast("Mode PWA aktif — HT siap digunakan", "success");
+        }
 
         // Check localStorage for saved display name
         const savedName = localStorage.getItem("ht_display_name");
