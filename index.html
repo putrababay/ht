@@ -755,7 +755,7 @@
     <!-- Custom Username Input Modal -->
     <div
       id="modal-username"
-      class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm z-[80] flex items-center justify-center p-4"
     >
       <div
         class="bg-gray-900 border-2 border-amber-600/80 rounded-2xl w-full max-w-sm p-5 text-gray-200 shadow-2xl relative"
@@ -3768,7 +3768,12 @@
       function showUsernameModal() {
         const modal = document.getElementById("modal-username");
         const input = document.getElementById("username-input");
+        const bootOverlay = document.getElementById("boot-overlay");
         input.value = myDisplayName === "Operator" ? "" : myDisplayName;
+        // Sembunyikan overlay boot agar modal identitas bisa diklik (z-index boot = 70)
+        if (bootOverlay && !bootOverlay.classList.contains("hidden")) {
+          bootOverlay.classList.add("hidden");
+        }
         modal.classList.remove("hidden");
         input.focus();
       }
@@ -3800,6 +3805,8 @@
           updatePeersListUI();
           showToast(`Nama diubah menjadi: ${myDisplayName}`, "success");
         } else {
+          showBootOverlay();
+          setBootProgress(50, "Menghubungkan ke saluran...");
           startAppFlow();
         }
       }
