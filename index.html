@@ -23,13 +23,13 @@
     <meta name="apple-mobile-web-app-title" content="Tactical HT" />
     <link
       rel="apple-touch-icon"
-      href="https://cdn-icons-png.flaticon.com/512/3659/3659898.png"
+      href="./icon-512.png"
     />
 
-    <!-- Inline Web App Manifest Data URI -->
+    <!-- Web App Manifest -->
     <link
       rel="manifest"
-      href='data:application/manifest+json,{"name":"Tactical HT Walkie Talkie","short_name":"Tactical HT","start_url":".","display":"standalone","background_color":"#030712","theme_color":"#030712","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/3659/3659898.png","sizes":"192x192","type":"image/png"}]}'
+      href="./manifest.json"
     />
 
     <!-- Tailwind CSS -->
@@ -87,6 +87,11 @@
         box-shadow:
           inset 2px 2px 5px #111827,
           inset -2px -2px 5px #4b5563;
+      }
+
+      #ptt-button {
+        touch-action: none;
+        -webkit-user-drag: none;
       }
     </style>
   </head>
@@ -213,11 +218,15 @@
             id="active-speaker-box"
             class="mt-2 text-[11px] font-mono bg-emerald-950/80 p-1.5 rounded border border-emerald-800 flex justify-between items-center"
           >
-            <span class="truncate"
-              >ID Anda:
-              <strong id="my-peer-id" class="text-emerald-200"
+            <span class="truncate flex items-center"
+              >Nama:
+              <strong id="my-peer-id" class="text-emerald-200 ml-1 cursor-pointer hover:underline" title="Klik untuk ubah nama"
                 >Menghubungkan...</strong
-              ></span
+              >
+              <button id="btn-edit-username" class="text-emerald-400 hover:text-emerald-200 ml-1.5 bg-emerald-900/40 hover:bg-emerald-900/80 px-1 py-0.5 rounded text-[8px]" title="Ubah Nama">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+            </span
             >
             <span
               id="users-count"
@@ -516,6 +525,53 @@
       </div>
     </div>
 
+    <!-- Custom Username Input Modal -->
+    <div
+      id="modal-username"
+      class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-gray-900 border-2 border-amber-600/80 rounded-2xl w-full max-w-sm p-5 text-gray-200 shadow-2xl relative"
+      >
+        <div class="text-center mb-4">
+          <div class="inline-flex p-3 bg-amber-500/10 rounded-full text-amber-500 mb-2 border border-amber-500/20">
+            <i class="fa-solid fa-user-gear text-2xl animate-pulse"></i>
+          </div>
+          <h3 class="font-extrabold text-amber-400 text-base tracking-wider uppercase">
+            Identitas Operator HT
+          </h3>
+          <p class="text-[11px] text-gray-400 mt-1">
+            Masukkan Nama/Callsign Anda agar dapat dikenali oleh pengguna lain di saluran ini.
+          </p>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-[10px] font-mono text-gray-400 uppercase mb-1 tracking-wider"
+              >Nama / Callsign</label
+            >
+            <input
+              type="text"
+              id="username-input"
+              maxlength="15"
+              placeholder="Contoh: ALPHA-01"
+              class="w-full bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-center text-amber-300 font-mono font-bold text-sm tracking-widest focus:outline-none focus:border-amber-500"
+            />
+          </div>
+        </div>
+
+        <div class="mt-5">
+          <button
+            id="btn-save-username"
+            class="w-full bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold text-xs uppercase tracking-wider py-2.5 rounded-lg transition-colors flex items-center justify-center space-x-2 shadow-lg shadow-amber-950/40"
+          >
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Simpan & Masuk</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div
       id="toast-container"
       class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center space-y-2 pointer-events-none"
@@ -547,6 +603,8 @@
       let roomName = "PMR-CH-1";
       let peer = null;
       let myPeerId = "";
+      let myDisplayName = "Operator";
+      let peerNames = new Map(); // peerId -> displayName
       let dataConnections = new Map();
       let activeCalls = new Map();
       let connectedPeersInfo = new Set();
@@ -566,6 +624,17 @@
       let voxAnimFrame = null;
       let audioFilterEnabled = true;
       let soundFxEnabled = true;
+
+      // Outgoing Audio Graph State
+      let micSourceNode = null;
+      let outgoingGainNode = null;
+      let outgoingStreamDestination = null;
+      let outgoingStream = null;
+      let filterActiveGain = null;
+      let filterBypassGain = null;
+      let highpassNode = null;
+      let lowpassNode = null;
+      let waveShaperNode = null;
 
       // PTT & VOX States
       let isTransmitting = false;
@@ -709,11 +778,82 @@
           micWarning.classList.add("hidden");
 
           initAudioContext();
+          setupOutgoingAudioGraph(micStream);
           setupVisualizerSource(micStream);
           setupVoxAnalyser(micStream);
         } catch (err) {
           console.error("Gagal mengakses mikrofon:", err);
           micWarning.classList.remove("hidden");
+        }
+      }
+
+      function setupOutgoingAudioGraph(stream) {
+        if (!audioCtx) return;
+
+        // Clean up if already exists
+        if (micSourceNode) {
+          try { micSourceNode.disconnect(); } catch (e) {}
+        }
+
+        micSourceNode = audioCtx.createMediaStreamSource(stream);
+        outgoingGainNode = audioCtx.createGain();
+        outgoingGainNode.gain.setValueAtTime(0, audioCtx.currentTime); // Start muted (PTT off)
+
+        outgoingStreamDestination = audioCtx.createMediaStreamDestination();
+        outgoingStream = outgoingStreamDestination.stream;
+
+        // Filter path
+        highpassNode = audioCtx.createBiquadFilter();
+        highpassNode.type = "highpass";
+        highpassNode.frequency.value = 320;
+
+        lowpassNode = audioCtx.createBiquadFilter();
+        lowpassNode.type = "lowpass";
+        lowpassNode.frequency.value = 3000;
+
+        waveShaperNode = audioCtx.createWaveShaper();
+        waveShaperNode.curve = makeDistortionCurve(8);
+
+        filterActiveGain = audioCtx.createGain();
+        filterBypassGain = audioCtx.createGain();
+
+        // Connect Active Path: micSourceNode -> highpassNode -> lowpassNode -> waveShaperNode -> filterActiveGain -> outgoingGainNode
+        micSourceNode.connect(highpassNode);
+        highpassNode.connect(lowpassNode);
+        lowpassNode.connect(waveShaperNode);
+        waveShaperNode.connect(filterActiveGain);
+        filterActiveGain.connect(outgoingGainNode);
+
+        // Connect Bypass Path: micSourceNode -> filterBypassGain -> outgoingGainNode
+        micSourceNode.connect(filterBypassGain);
+        filterBypassGain.connect(outgoingGainNode);
+
+        // Connect outgoingGainNode to output destination stream
+        outgoingGainNode.connect(outgoingStreamDestination);
+
+        // Apply initial filter status
+        updateAudioFilterRouting();
+      }
+
+      function updateAudioFilterRouting() {
+        if (!audioCtx || !filterActiveGain || !filterBypassGain) return;
+        const now = audioCtx.currentTime;
+        if (audioFilterEnabled) {
+          filterActiveGain.gain.setTargetAtTime(1, now, 0.01);
+          filterBypassGain.gain.setTargetAtTime(0, now, 0.01);
+        } else {
+          filterActiveGain.gain.setTargetAtTime(0, now, 0.01);
+          filterBypassGain.gain.setTargetAtTime(1, now, 0.01);
+        }
+      }
+
+      function setTransmissionGain(on) {
+        if (!audioCtx || !outgoingGainNode) return;
+        const now = audioCtx.currentTime;
+        if (on) {
+          outgoingGainNode.gain.setTargetAtTime(1, now, 0.01);
+        } else {
+          outgoingGainNode.gain.setTargetAtTime(0, now, 0.01);
         }
       }
 
@@ -872,7 +1012,7 @@
         const sanitizedRoom = roomName.toUpperCase().replace(/[^A-Z0-9]/g, "");
         const uniqueSuffix = Math.random().toString(36).substring(2, 6);
         myPeerId = `HT-${sanitizedRoom}-${uniqueSuffix}`;
-        myPeerIdElem.textContent = myPeerId;
+        updateMyDisplayCallsign();
 
         if (peer) {
           peer.destroy();
@@ -912,7 +1052,7 @@
 
         peer.on("call", (call) => {
           console.log("Incoming call from:", call.peer);
-          call.answer(micStream);
+          call.answer(outgoingStream || micStream);
 
           call.on("stream", (remoteStream) => {
             playRemoteAudio(remoteStream, call.peer);
@@ -949,13 +1089,28 @@
           } else if (data.type === "PTT_STOP") {
             handlePeerStoppedTalking(conn.peer);
           } else if (data.type === "HELLO") {
-            conn.send({ type: "HELLO_ACK", peerId: myPeerId });
+            if (data.displayName) {
+              peerNames.set(conn.peer, data.displayName);
+            }
+            conn.send({ type: "HELLO_ACK", peerId: myPeerId, displayName: myDisplayName });
+            updatePeersListUI();
+          } else if (data.type === "HELLO_ACK") {
+            if (data.displayName) {
+              peerNames.set(conn.peer, data.displayName);
+              updatePeersListUI();
+            }
+          } else if (data.type === "UPDATE_NAME") {
+            if (data.displayName) {
+              peerNames.set(conn.peer, data.displayName);
+              updatePeersListUI();
+            }
           }
         });
 
         conn.on("close", () => {
           dataConnections.delete(conn.peer);
           connectedPeersInfo.delete(conn.peer);
+          peerNames.delete(conn.peer);
           updatePeersListUI();
         });
       }
@@ -967,12 +1122,17 @@
         const conn = peer.connect(targetPeerId);
         conn.on("open", () => {
           setupDataConnection(conn);
-          conn.send({ type: "HELLO", peerId: myPeerId });
+          conn.send({ type: "HELLO", peerId: myPeerId, displayName: myDisplayName });
         });
 
-        if (micStream) {
-          const processedStream = createRadioVoiceFilter(micStream);
-          const call = peer.call(targetPeerId, processedStream);
+        if (outgoingStream) {
+          const call = peer.call(targetPeerId, outgoingStream);
+          call.on("stream", (remoteStream) => {
+            playRemoteAudio(remoteStream, targetPeerId);
+          });
+          activeCalls.set(targetPeerId, call);
+        } else if (micStream) {
+          const call = peer.call(targetPeerId, micStream);
           call.on("stream", (remoteStream) => {
             playRemoteAudio(remoteStream, targetPeerId);
           });
@@ -1052,7 +1212,11 @@
               const payload = JSON.parse(message.toString());
               if (!payload || payload.peerId === myPeerId) return;
 
-              if (payload.type === "ANNOUNCE" || payload.type === "HEARTBEAT") {
+              if (payload.type === "ANNOUNCE" || payload.type === "HEARTBEAT" || payload.type === "RESPONSE") {
+                if (payload.displayName) {
+                  peerNames.set(payload.peerId, payload.displayName);
+                  updatePeersListUI();
+                }
                 connectToPeer(payload.peerId);
 
                 if (payload.type === "ANNOUNCE") {
@@ -1064,6 +1228,7 @@
                   dataConnections.get(payload.peerId).close();
                 }
                 connectedPeersInfo.delete(payload.peerId);
+                peerNames.delete(payload.peerId);
                 updatePeersListUI();
               }
             } catch (e) {
@@ -1086,6 +1251,7 @@
             JSON.stringify({
               type: actionType,
               peerId: myPeerId,
+              displayName: myDisplayName,
               timestamp: Date.now(),
             }),
           );
@@ -1170,6 +1336,7 @@
         updateStatusDisplay("transmitting");
 
         broadcastData({ type: "PTT_START", userName: myPeerId });
+        setTransmissionGain(true); // Open the audio gate to allow microphone streaming
 
         if (micStream) {
           setupVisualizerSource(micStream);
@@ -1180,6 +1347,7 @@
         if (!isTransmitting) return;
 
         isTransmitting = false;
+        setTransmissionGain(false); // Mute the microphone stream immediately
 
         playRogerBeep();
         updateStatusDisplay("idle");
@@ -1302,6 +1470,11 @@
           stopTransmitting();
         });
 
+        // Prevent mobile context menu on long press
+        pttBtn.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+        });
+
         // Keyboard Controls (Spacebar & 'T' key hold to talk)
         window.addEventListener("keydown", (e) => {
           if (
@@ -1322,6 +1495,13 @@
             document.activeElement.tagName !== "SELECT"
           ) {
             e.preventDefault();
+            stopTransmitting();
+          }
+        });
+
+        // Handle window blur to automatically stop transmission
+        window.addEventListener("blur", () => {
+          if (isTransmitting) {
             stopTransmitting();
           }
         });
@@ -1395,6 +1575,7 @@
             audioFilterEnabled = !audioFilterEnabled;
             document.getElementById("filter-status").textContent =
               audioFilterEnabled ? "ON" : "OFF";
+            updateAudioFilterRouting();
             showToast(
               `HT Audio Filter: ${audioFilterEnabled ? "Aktif" : "Nonaktif"}`,
               "info",
@@ -1484,21 +1665,18 @@
         });
       }
 
-      // Dynamic Service Worker for PWA
+      // Service Worker registration for PWA
       function registerPwaServiceWorker() {
         if ("serviceWorker" in navigator) {
-          const swCode = `
-          const CACHE_NAME = 'ht-ptt-v2';
-          self.addEventListener('install', (e) => { self.skipWaiting(); });
-          self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
-          self.addEventListener('fetch', (e) => {
-            e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
-          });
-        `;
-          const blob = new Blob([swCode], { type: "application/javascript" });
-          const swUrl = URL.createObjectURL(blob);
-          navigator.serviceWorker.register(swUrl).catch((err) => {
-            console.log("Service worker registration skipped:", err);
+          window.addEventListener("load", () => {
+            navigator.serviceWorker
+              .register("./sw.js")
+              .then((reg) => {
+                console.log("Service Worker registered successfully with scope:", reg.scope);
+              })
+              .catch((err) => {
+                console.error("Service Worker registration failed:", err);
+              });
           });
         }
       }
@@ -1525,6 +1703,63 @@
         playSquelchNoise(0.05);
         initPeerConnection();
         showToast(`Pindah ke ${chObj.freq} (Channel ${chObj.ch})`, "info");
+      }
+
+      // --- Username Modal & Operator Identity Flow ---
+      let appStarted = false;
+
+      async function startAppFlow() {
+        if (appStarted) return;
+        appStarted = true;
+
+        await setupMicrophone();
+        initPeerConnection();
+      }
+
+      function showUsernameModal() {
+        const modal = document.getElementById("modal-username");
+        const input = document.getElementById("username-input");
+        input.value = myDisplayName === "Operator" ? "" : myDisplayName;
+        modal.classList.remove("hidden");
+        input.focus();
+      }
+
+      function hideUsernameModal() {
+        const modal = document.getElementById("modal-username");
+        modal.classList.add("hidden");
+      }
+
+      function handleSaveUsername() {
+        const input = document.getElementById("username-input");
+        const newName = input.value.trim().toUpperCase();
+        if (!newName) {
+          showToast("Nama tidak boleh kosong!", "warning");
+          return;
+        }
+
+        myDisplayName = newName;
+        localStorage.setItem("ht_display_name", myDisplayName);
+        hideUsernameModal();
+
+        updateMyDisplayCallsign();
+
+        if (peer && peer.open) {
+          // Update peers via PeerJS Data Connection
+          broadcastData({ type: "UPDATE_NAME", displayName: myDisplayName });
+          // Update peers via MQTT Signaling
+          sendMqttPresence("ANNOUNCE");
+          updatePeersListUI();
+          showToast(`Nama diubah menjadi: ${myDisplayName}`, "success");
+        } else {
+          startAppFlow();
+        }
+      }
+
+      function updateMyDisplayCallsign() {
+        if (myPeerIdElem && myPeerId) {
+          const shortId = myPeerId.substring(myPeerId.lastIndexOf("-") + 1);
+          myPeerIdElem.textContent = `${myDisplayName} (${shortId})`;
+        }
       }
 
       // --- App Initialization ---
