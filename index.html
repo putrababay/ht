@@ -23,8 +23,9 @@
     />
     <meta name="apple-mobile-web-app-title" content="PTT SIBAGUS" />
     <link rel="canonical" href="https://ptt.sibag.us/" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
-    <link rel="apple-touch-icon" href="/icon-512.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png" />
+    <link rel="apple-touch-icon" href="./icon-512.png" />
+    <link rel="preload" href="./icon-512.png" as="image" type="image/png" />
 
     <!-- Open Graph / Social Share Meta -->
     <meta property="og:type" content="website" />
@@ -234,22 +235,13 @@
             </div>
           </div>
 
-          <!-- Frequency & Room Display -->
+          <!-- Saluran & Frekuensi (satu tampilan) -->
           <div class="my-2 text-center">
             <div
               id="freq-display"
-              class="text-2xl sm:text-3xl font-extrabold tracking-wider lcd-text text-emerald-300"
+              class="text-xl sm:text-2xl font-extrabold tracking-wider lcd-text text-emerald-300"
             >
-              446.00625 MHz
-            </div>
-            <div
-              id="status-subtext"
-              class="text-xs font-mono mt-1 text-emerald-400/80 truncate"
-            >
-              Channel:
-              <span id="current-room-name" class="font-bold underline"
-                >PMR-CH-1</span
-              >
+              CH 01 · 446.00625 MHz
             </div>
           </div>
 
@@ -290,60 +282,37 @@
         </div>
       </div>
 
-      <!-- Control Panel / Channel & Settings -->
-      <div class="px-4 py-2 bg-gray-900 grid grid-cols-2 gap-2 text-xs">
-        <!-- Channel Selector (16 Channels) -->
+      <!-- Saluran Radio & Frekuensi (satu kesatuan) -->
+      <div class="px-4 py-2 bg-gray-900">
         <div
-          class="bg-gray-800 p-2 rounded-lg border border-gray-700 flex flex-col justify-between"
+          class="bg-gray-800 p-2.5 rounded-lg border border-gray-700"
         >
           <label
-            class="text-[10px] text-gray-400 font-semibold uppercase flex justify-between"
+            class="text-[10px] text-gray-400 font-semibold uppercase flex justify-between mb-1.5"
           >
-            <span>Saluran Radio</span>
+            <span>Saluran &amp; Frekuensi PMR</span>
             <span class="text-amber-400 font-mono">16 CH</span>
           </label>
-          <div class="flex items-center space-x-1 mt-1">
+          <div class="flex items-center space-x-1">
             <button
               id="btn-ch-down"
-              class="bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-gray-200 w-8 h-8 rounded font-bold flex items-center justify-center"
+              type="button"
+              class="bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-gray-200 w-9 h-9 rounded font-bold flex items-center justify-center shrink-0"
             >
               <i class="fa-solid fa-chevron-left"></i>
             </button>
             <select
               id="channel-select"
-              class="w-full bg-gray-900 border border-gray-700 text-amber-400 font-mono text-xs rounded px-1 py-1 text-center font-bold focus:outline-none"
+              class="w-full bg-gray-900 border border-gray-700 text-amber-300 font-mono text-[11px] rounded px-2 py-2 text-center font-bold focus:outline-none focus:border-amber-500"
             >
               <!-- Populated via JavaScript -->
             </select>
             <button
               id="btn-ch-up"
-              class="bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-gray-200 w-8 h-8 rounded font-bold flex items-center justify-center"
+              type="button"
+              class="bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-gray-200 w-9 h-9 rounded font-bold flex items-center justify-center shrink-0"
             >
               <i class="fa-solid fa-chevron-right"></i>
-            </button>
-          </div>
-        </div>
-
-        <!-- Custom Room / Group Joiner -->
-        <div
-          class="bg-gray-800 p-2 rounded-lg border border-gray-700 flex flex-col justify-between"
-        >
-          <label class="text-[10px] text-gray-400 font-semibold uppercase"
-            >Frekuensi Khusus (Room)</label
-          >
-          <div class="flex items-center space-x-1 mt-1">
-            <input
-              type="text"
-              id="room-input"
-              value="PMR-CH-1"
-              class="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-amber-300 font-mono focus:outline-none focus:border-amber-500"
-              placeholder="Nama Room"
-            />
-            <button
-              id="btn-join-room"
-              class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-2 py-1 rounded text-xs"
-            >
-              Set
             </button>
           </div>
         </div>
@@ -378,15 +347,6 @@
           >
             <i class="fa-solid fa-volume-high"></i>
             <span>Beep: <strong id="roger-status">ON</strong></span>
-          </button>
-
-          <!-- STUN/TURN ICE Settings -->
-          <button
-            id="btn-open-stun"
-            class="flex items-center space-x-1 px-2 py-1.5 rounded bg-blue-950 border border-blue-800 text-blue-300 font-mono text-[11px]"
-          >
-            <i class="fa-solid fa-network-wired"></i>
-            <span>STUN</span>
           </button>
 
           <!-- Microphone Settings -->
@@ -644,86 +604,46 @@
       </div>
     </div>
 
-    <!-- Custom STUN/TURN Config Modal -->
+    <!-- Boot / Loading Progress Overlay -->
     <div
-      id="modal-turn"
-      class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      id="boot-overlay"
+      class="fixed inset-0 bg-gray-950/95 backdrop-blur-sm z-[70] flex flex-col items-center justify-center p-6"
     >
-      <div
-        class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-sm p-4 text-gray-200 shadow-2xl"
-      >
+      <div id="boot-logo-wrap" class="mb-4">
+        <img
+          id="boot-logo"
+          src="./icon-512.png"
+          alt="PTT SIBAGUS"
+          class="w-16 h-16 rounded-2xl border border-emerald-800 shadow-lg object-cover"
+        />
         <div
-          class="flex justify-between items-center border-b border-gray-800 pb-2 mb-3"
+          id="boot-logo-fallback"
+          class="hidden w-16 h-16 rounded-2xl border border-emerald-800 shadow-lg bg-emerald-950 flex items-center justify-center text-3xl"
         >
-          <h3
-            class="font-bold text-amber-400 text-sm flex items-center space-x-2"
-          >
-            <i class="fa-solid fa-network-wired"></i>
-            <span>Pengaturan STUN / TURN Server</span>
-          </h3>
-          <button
-            id="btn-close-turn"
-            class="text-gray-400 hover:text-white font-bold"
-          >
-            &times;
-          </button>
-        </div>
-
-        <p class="text-[11px] text-gray-400 mb-3">
-          STUN publik Google diaktifkan otomatis. Tambahkan TURN server opsional
-          untuk jaringan terproteksi NAT.
-        </p>
-
-        <div class="space-y-2 text-xs">
-          <div>
-            <label
-              class="block text-[10px] font-mono text-gray-400 uppercase mb-1"
-              >TURN Server URL</label
-            >
-            <input
-              type="text"
-              id="turn-url-input"
-              placeholder="turn:turn.example.com:3478"
-              class="w-full bg-gray-950 border border-gray-700 rounded px-2.5 py-1.5 text-blue-300 font-mono focus:outline-none focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label
-              class="block text-[10px] font-mono text-gray-400 uppercase mb-1"
-              >Username (Opsional)</label
-            >
-            <input
-              type="text"
-              id="turn-user-input"
-              placeholder="user123"
-              class="w-full bg-gray-950 border border-gray-700 rounded px-2.5 py-1.5 text-gray-200 font-mono focus:outline-none focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label
-              class="block text-[10px] font-mono text-gray-400 uppercase mb-1"
-              >Credential (Opsional)</label
-            >
-            <input
-              type="password"
-              id="turn-pass-input"
-              placeholder="••••••••"
-              class="w-full bg-gray-950 border border-gray-700 rounded px-2.5 py-1.5 text-gray-200 font-mono focus:outline-none focus:border-blue-500"
-            />
-          </div>
-        </div>
-
-        <div
-          class="flex justify-end space-x-2 mt-4 pt-2 border-t border-gray-800"
-        >
-          <button
-            id="btn-save-turn"
-            class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-3 py-1.5 rounded-lg"
-          >
-            Simpan & Reconnect
-          </button>
+          📻
         </div>
       </div>
+      <h2 class="text-emerald-400 font-extrabold tracking-wider text-sm mb-1">
+        PTT SIBAGUS
+      </h2>
+      <p id="boot-status-text" class="text-xs text-gray-400 mb-4 text-center">
+        Memuat sistem...
+      </p>
+      <div
+        class="w-full max-w-xs h-2.5 bg-gray-900 rounded-full overflow-hidden border border-gray-700"
+      >
+        <div
+          id="boot-progress-bar"
+          class="h-full bg-emerald-500 transition-all duration-300 ease-out"
+          style="width: 0%"
+        ></div>
+      </div>
+      <p
+        id="boot-progress-label"
+        class="text-[10px] text-gray-500 mt-2 font-mono"
+      >
+        0%
+      </p>
     </div>
 
     <!-- Custom Username Input Modal -->
@@ -934,6 +854,10 @@
       let activeBroadcaster = null;
       const remoteAudioElements = new Map();
       const notifiedJoinPeers = new Set();
+      const peerPresence = new Map(); // peerId -> { displayName, lastSeen, dataOpen }
+      const PEER_STALE_MS = 25000;
+      const PRESENCE_SWEEP_MS = 5000;
+      let presenceSweepInterval = null;
 
       // Global Online Signaling State (MQTT)
       let mqttClient = null;
@@ -969,13 +893,217 @@
       let voxThreshold = 30; // 30% volume threshold
       let voxHangTimeTimer = null;
       let voxAutoTriggered = false;
-
-      // Custom TURN configuration state
-      let customTurnConfig = { url: "", username: "", password: "" };
-      let deferredPwaPrompt = null;
+      let rxHangTimeTimer = null;
 
       // PWA Configuration
       const PWA_ORIGIN = "https://ptt.sibag.us";
+      const APP_CACHE_KEY = "ptt_sibagus_cache";
+      let deferredPwaPrompt = null;
+
+      function loadAppCache() {
+        try {
+          const raw = localStorage.getItem(APP_CACHE_KEY);
+          return raw ? JSON.parse(raw) : {};
+        } catch {
+          return {};
+        }
+      }
+
+      function saveAppCache(partial) {
+        try {
+          const cache = {
+            ...loadAppCache(),
+            ...partial,
+            updatedAt: Date.now(),
+          };
+          localStorage.setItem(APP_CACHE_KEY, JSON.stringify(cache));
+        } catch (e) {
+          console.warn("Gagal menyimpan cache:", e);
+        }
+      }
+
+      function persistAppCache() {
+        saveAppCache({
+          channelIdx: currentChannelIdx,
+          voxEnabled,
+          voxThreshold,
+          audioFilterEnabled,
+          soundFxEnabled,
+        });
+      }
+
+      function applyAppCache() {
+        const cache = loadAppCache();
+        if (
+          typeof cache.channelIdx === "number" &&
+          cache.channelIdx >= 0 &&
+          cache.channelIdx < PMR_CHANNELS.length
+        ) {
+          currentChannelIdx = cache.channelIdx;
+          const ch = PMR_CHANNELS[currentChannelIdx];
+          roomName = `PMR-CH-${ch.ch}`;
+          updateChannelDisplayUI(ch);
+        }
+        if (typeof cache.voxEnabled === "boolean") voxEnabled = cache.voxEnabled;
+        if (typeof cache.voxThreshold === "number") {
+          voxThreshold = Math.min(90, Math.max(5, cache.voxThreshold));
+        }
+        if (typeof cache.audioFilterEnabled === "boolean") {
+          audioFilterEnabled = cache.audioFilterEnabled;
+        }
+        if (typeof cache.soundFxEnabled === "boolean") {
+          soundFxEnabled = cache.soundFxEnabled;
+        }
+        applyCachedSettingsUI();
+      }
+
+      function getAssetPath(file) {
+        try {
+          return new URL(file, window.location.href).href;
+        } catch {
+          return file;
+        }
+      }
+
+      function initBootLogo() {
+        const img = document.getElementById("boot-logo");
+        const fallback = document.getElementById("boot-logo-fallback");
+        if (!img) return;
+
+        img.src = getAssetPath("./icon-512.png");
+        img.onload = () => {
+          img.classList.remove("hidden");
+          fallback?.classList.add("hidden");
+        };
+        img.onerror = () => {
+          img.classList.add("hidden");
+          fallback?.classList.remove("hidden");
+        };
+      }
+
+      function syncVoxUiState() {
+        const toggleVox = document.getElementById("toggle-vox");
+        if (voxStatusElem) {
+          voxStatusElem.textContent = voxEnabled ? "ON" : "OFF";
+        }
+        if (!voxBadge) return;
+
+        if (voxEnabled) {
+          voxBadge.className =
+            "px-1.5 py-0.5 rounded text-[10px] bg-amber-950 text-amber-300 font-bold border border-amber-700 animate-pulse";
+          voxBadge.textContent = "VOX AUTO";
+          voxControlPanel?.classList.remove("hidden");
+          if (toggleVox) {
+            toggleVox.className =
+              "flex items-center space-x-1 px-2.5 py-1.5 rounded bg-amber-950 border border-amber-600 text-amber-300 font-mono text-[11px]";
+          }
+        } else {
+          voxBadge.className =
+            "px-1.5 py-0.5 rounded text-[10px] bg-emerald-950 text-gray-500 font-bold border border-emerald-900";
+          voxBadge.textContent = "VOX OFF";
+          voxControlPanel?.classList.add("hidden");
+          if (toggleVox) {
+            toggleVox.className =
+              "flex items-center space-x-1 px-2.5 py-1.5 rounded bg-gray-800 border border-gray-700 text-gray-400 font-mono text-[11px]";
+          }
+        }
+      }
+
+      function applyCachedSettingsUI() {
+        if (voxSensSlider) voxSensSlider.value = voxThreshold;
+        if (voxSensLabel) voxSensLabel.textContent = `${voxThreshold}%`;
+        if (voxThresholdMarker) voxThresholdMarker.style.left = `${voxThreshold}%`;
+        const filterStatus = document.getElementById("filter-status");
+        if (filterStatus) filterStatus.textContent = audioFilterEnabled ? "ON" : "OFF";
+        const rogerStatus = document.getElementById("roger-status");
+        if (rogerStatus) rogerStatus.textContent = soundFxEnabled ? "ON" : "OFF";
+        syncVoxUiState();
+      }
+
+      function getAnalyserActivity(analyser, threshold = 6) {
+        if (!analyser) return false;
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(data);
+        for (let i = 0; i < data.length; i++) {
+          if (data[i] > threshold) return true;
+        }
+        return false;
+      }
+
+      function isRemoteAudioPlaying() {
+        for (const el of remoteAudioElements.values()) {
+          if (el.srcObject && !el.paused && !el.ended) return true;
+        }
+        return false;
+      }
+
+      function updateIdleVisualizerLabel() {
+        if (!noAudioText) return;
+        if (voxEnabled) {
+          noAudioText.textContent = isTransmitting
+            ? "MENGIRIM..."
+            : "VOX SIAP • MONITOR SUARA";
+        } else {
+          noAudioText.textContent = "Audio Idle";
+        }
+      }
+
+      function formatChannelLabel(ch) {
+        const num = ch.ch < 10 ? `0${ch.ch}` : `${ch.ch}`;
+        return `CH ${num} · ${ch.freq}`;
+      }
+
+      function updateChannelDisplayUI(chObj) {
+        if (!chObj) return;
+        const chNumStr = chObj.ch < 10 ? `0${chObj.ch}` : `${chObj.ch}`;
+        if (freqDisplay) {
+          freqDisplay.textContent = formatChannelLabel(chObj);
+        }
+        if (channelNumDisplay) {
+          channelNumDisplay.textContent = chNumStr;
+        }
+        roomName = `PMR-CH-${chObj.ch}`;
+      }
+
+      function setBootProgress(percent, statusText) {
+        const bar = document.getElementById("boot-progress-bar");
+        const label = document.getElementById("boot-progress-label");
+        const status = document.getElementById("boot-status-text");
+        const pct = Math.min(100, Math.max(0, Math.round(percent)));
+        if (bar) bar.style.width = `${pct}%`;
+        if (label) label.textContent = `${pct}%`;
+        if (status && statusText) status.textContent = statusText;
+      }
+
+      function hideBootOverlay() {
+        setBootProgress(100, "Sistem siap!");
+        setTimeout(() => {
+          document.getElementById("boot-overlay")?.classList.add("hidden");
+        }, 350);
+      }
+
+      function showBootOverlay(statusText) {
+        const overlay = document.getElementById("boot-overlay");
+        if (overlay) overlay.classList.remove("hidden");
+        if (statusText) setBootProgress(0, statusText);
+      }
+
+      function waitForPeerOpen(timeoutMs = 10000) {
+        return new Promise((resolve) => {
+          if (peer?.open) {
+            resolve(true);
+            return;
+          }
+          const timeout = setTimeout(() => resolve(false), timeoutMs);
+          const check = setInterval(() => {
+            if (peer?.open) {
+              clearInterval(check);
+              clearTimeout(timeout);
+              resolve(true);
+            }
+          }, 100);
+        });
+      }
 
       function isPwaStandalone() {
         return (
@@ -1131,8 +1259,7 @@
         pttSubtext,
         freqDisplay,
         channelNumDisplay,
-        chSelectElem,
-        currentRoomNameElem;
+        chSelectElem;
       let canvas,
         canvasCtx,
         noAudioText,
@@ -1420,6 +1547,134 @@
           );
         }
         if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+      }
+
+      function touchPeerPresence(
+        peerId,
+        { displayName = null, lastSeen = null, dataOpen = null } = {},
+      ) {
+        if (!peerId || peerId === myPeerId) return;
+        const prev = peerPresence.get(peerId) || {
+          displayName: null,
+          lastSeen: 0,
+          dataOpen: false,
+        };
+        peerPresence.set(peerId, {
+          displayName: displayName || prev.displayName,
+          lastSeen: lastSeen ?? Date.now(),
+          dataOpen: dataOpen ?? prev.dataOpen,
+        });
+        if (displayName) peerNames.set(peerId, displayName);
+      }
+
+      function isPeerConnectionOpen(peerId) {
+        const conn = dataConnections.get(peerId);
+        return !!(conn && conn.open);
+      }
+
+      function getOnlinePeerIds() {
+        const online = [];
+        connectedPeersInfo.forEach((peerId) => {
+          if (isPeerConnectionOpen(peerId)) online.push(peerId);
+        });
+        return online;
+      }
+
+      function removePeerFromChannel(peerId, { notify = true } = {}) {
+        if (!peerId || peerId === myPeerId) return;
+        if (
+          !connectedPeersInfo.has(peerId) &&
+          !dataConnections.has(peerId) &&
+          !peerPresence.has(peerId)
+        ) {
+          return;
+        }
+
+        if (notify) notifyMemberLeft(peerId);
+
+        if (dataConnections.has(peerId)) {
+          const conn = dataConnections.get(peerId);
+          dataConnections.delete(peerId);
+          try {
+            conn.close();
+          } catch (e) {}
+        }
+
+        if (activeCalls.has(peerId)) {
+          const call = activeCalls.get(peerId);
+          activeCalls.delete(peerId);
+          try {
+            call.close();
+          } catch (e) {}
+        }
+
+        stopRemoteAudio(peerId);
+        connectedPeersInfo.delete(peerId);
+        peerNames.delete(peerId);
+        peerPresence.delete(peerId);
+        notifiedJoinPeers.delete(peerId);
+
+        if (activeBroadcaster === peerId) {
+          isReceiving = false;
+          activeBroadcaster = null;
+          updateStatusDisplay("idle");
+        }
+
+        updatePeersListUI();
+      }
+
+      function markPeerActive(peerId, displayName = null) {
+        if (!peerId || peerId === myPeerId) return;
+
+        touchPeerPresence(peerId, { displayName, dataOpen: true });
+        connectedPeersInfo.add(peerId);
+        if (displayName) peerNames.set(peerId, displayName);
+        maybeAnnouncePeerJoin(peerId);
+        updatePeersListUI();
+      }
+
+      function pruneStalePeers() {
+        if (appPoweredOff || !peer) return;
+
+        const toRemove = [];
+
+        connectedPeersInfo.forEach((peerId) => {
+          const connOpen = isPeerConnectionOpen(peerId);
+          const presence = peerPresence.get(peerId);
+          const lastSeen = presence?.lastSeen || 0;
+          const stale = Date.now() - lastSeen > PEER_STALE_MS;
+
+          if (connOpen) {
+            touchPeerPresence(peerId, { dataOpen: true });
+            return;
+          }
+
+          if (stale || !presence) {
+            toRemove.push(peerId);
+          }
+        });
+
+        peerPresence.forEach((presence, peerId) => {
+          if (connectedPeersInfo.has(peerId)) return;
+          if (Date.now() - presence.lastSeen > PEER_STALE_MS) {
+            peerPresence.delete(peerId);
+            peerNames.delete(peerId);
+          }
+        });
+
+        toRemove.forEach((peerId) => removePeerFromChannel(peerId));
+      }
+
+      function startPresenceMonitor() {
+        stopPresenceMonitor();
+        presenceSweepInterval = setInterval(pruneStalePeers, PRESENCE_SWEEP_MS);
+      }
+
+      function stopPresenceMonitor() {
+        if (presenceSweepInterval) {
+          clearInterval(presenceSweepInterval);
+          presenceSweepInterval = null;
+        }
       }
 
       function maybeAnnouncePeerJoin(peerId) {
@@ -1939,6 +2194,7 @@
 
         connectedPeersInfo.clear();
         peerNames.clear();
+        peerPresence.clear();
         notifiedJoinPeers.clear();
 
         remoteAudioElements.forEach((el) => {
@@ -1974,6 +2230,7 @@
           peer = null;
         }
 
+        stopPresenceMonitor();
         updatePeersListUI();
       }
 
@@ -2012,23 +2269,21 @@
         leaveCurrentChannel({ sendLeave: true });
 
         roomName = newRoomName;
-        document.getElementById("room-input").value = roomName;
-        currentRoomNameElem.textContent = roomName;
 
         if (updateChannelUi) {
-          freqDisplay.textContent = updateChannelUi.freq;
-          channelNumDisplay.textContent = updateChannelUi.chNum;
+          const chObj = PMR_CHANNELS[currentChannelIdx];
+          updateChannelDisplayUI(chObj);
+          if (chSelectElem) chSelectElem.value = currentChannelIdx;
         } else {
           syncChannelIndexFromRoom();
           const chObj = PMR_CHANNELS[currentChannelIdx];
           if (roomName.toUpperCase() === `PMR-CH-${chObj.ch}`.toUpperCase()) {
-            freqDisplay.textContent = chObj.freq;
-            channelNumDisplay.textContent =
-              chObj.ch < 10 ? `0${chObj.ch}` : `${chObj.ch}`;
+            updateChannelDisplayUI(chObj);
           }
         }
 
         updateShareMeta();
+        persistAppCache();
         await ensureAudioPipelineReady();
         initPeerConnection({ skipLeave: true });
       }
@@ -2079,6 +2334,7 @@
 
         if (visualizerAnimFrame) cancelAnimationFrame(visualizerAnimFrame);
         if (voxAnimFrame) cancelAnimationFrame(voxAnimFrame);
+        if (rxHangTimeTimer) clearTimeout(rxHangTimeTimer);
 
         document.getElementById("modal-poweroff").classList.add("hidden");
         document.getElementById("overlay-powered-off").classList.remove("hidden");
@@ -2102,12 +2358,14 @@
           return;
         }
 
-        initPeerConnection();
+        initPeerConnection({ skipLeave: true });
+        await waitForPeerOpen();
         await requestWakeLock();
         startBackgroundKeepAlive();
         startNetworkMonitor();
         appStarted = true;
         requestNotificationPermission();
+        hideBootOverlay();
         showToast("HT dinyalakan — siap komunikasi!", "success");
       }
 
@@ -2276,48 +2534,103 @@
               startTransmitting();
             }
           } else if (isTransmitting && voxAutoTriggered) {
-            // Voice dropped below threshold -> set hang time delay before stopping PTT
             if (!voxHangTimeTimer) {
               voxHangTimeTimer = setTimeout(() => {
-                stopTransmitting();
+                if (!voxAnalyserNode) {
+                  voxHangTimeTimer = null;
+                  return;
+                }
+                const recheck = new Uint8Array(voxAnalyserNode.frequencyBinCount);
+                voxAnalyserNode.getByteFrequencyData(recheck);
+                let sum = 0;
+                for (let i = 0; i < recheck.length; i++) sum += recheck[i];
+                const vol = Math.min(
+                  100,
+                  Math.round((sum / recheck.length / 128) * 100),
+                );
+                if (vol >= voxThreshold) {
+                  voxHangTimeTimer = null;
+                  return;
+                }
+                stopTransmitting(true);
                 voxAutoTriggered = false;
                 voxHangTimeTimer = null;
-              }, 700); // 700ms hang time
+              }, 1400);
             }
           }
         }
 
-        voxAnimFrame = requestAnimationFrame(monitorVoxLevel);
+        if (voxEnabled) voxAnimFrame = requestAnimationFrame(monitorVoxLevel);
       }
 
       // --- Audio Canvas Visualizer ---
       function setupVisualizerSource(stream) {
-        if (!audioCtx) return;
-        if (analyserNode) analyserNode.disconnect();
+        if (!audioCtx || !stream) return;
+        if (analyserNode) {
+          try {
+            analyserNode.disconnect();
+          } catch (e) {}
+        }
 
         const source = audioCtx.createMediaStreamSource(stream);
         analyserNode = audioCtx.createAnalyser();
         analyserNode.fftSize = 64;
+        analyserNode.smoothingTimeConstant = 0.65;
         source.connect(analyserNode);
 
+        startVisualizerLoop();
+      }
+
+      function startVisualizerLoop() {
+        if (visualizerAnimFrame) cancelAnimationFrame(visualizerAnimFrame);
         drawVisualizer();
       }
 
       function drawVisualizer() {
-        if (!canvasCtx) return;
+        if (!canvasCtx || appPoweredOff) return;
+
+        visualizerAnimFrame = requestAnimationFrame(drawVisualizer);
+
         const width = (canvas.width = canvas.parentElement.clientWidth);
         const height = (canvas.height = canvas.parentElement.clientHeight);
 
-        if (!analyserNode || (!isTransmitting && !isReceiving)) {
+        let dataArray = null;
+        let bufferLength = 0;
+        let showWave = false;
+
+        if (analyserNode && (isTransmitting || isReceiving)) {
+          bufferLength = analyserNode.frequencyBinCount;
+          dataArray = new Uint8Array(bufferLength);
+          analyserNode.getByteFrequencyData(dataArray);
+          showWave =
+            getAnalyserActivity(analyserNode) || isTransmitting || isReceiving;
+        } else if (voxEnabled && voxAnalyserNode) {
+          bufferLength = Math.min(32, voxAnalyserNode.frequencyBinCount);
+          dataArray = new Uint8Array(voxAnalyserNode.frequencyBinCount);
+          voxAnalyserNode.getByteFrequencyData(dataArray);
+          showWave =
+            getAnalyserActivity(voxAnalyserNode, 4) || isTransmitting;
+        } else if (isRemoteAudioPlaying() || isReceiving) {
+          showWave = true;
+        }
+
+        if (!showWave) {
           canvasCtx.clearRect(0, 0, width, height);
+          updateIdleVisualizerLabel();
           noAudioText.style.display = "block";
           return;
         }
 
         noAudioText.style.display = "none";
-        const bufferLength = analyserNode.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        analyserNode.getByteFrequencyData(dataArray);
+
+        if (!dataArray) {
+          canvasCtx.clearRect(0, 0, width, height);
+          canvasCtx.fillStyle = isReceiving
+            ? "rgb(16, 180, 120)"
+            : "rgb(16, 140, 100)";
+          canvasCtx.fillRect(0, height * 0.35, width, height * 0.3);
+          return;
+        }
 
         canvasCtx.clearRect(0, 0, width, height);
         const barWidth = (width / bufferLength) * 2;
@@ -2325,16 +2638,14 @@
 
         for (let i = 0; i < bufferLength; i++) {
           const barHeight = (dataArray[i] / 255) * height;
-
           canvasCtx.fillStyle = isTransmitting
             ? `rgb(${150 + barHeight * 2}, 30, 30)`
-            : `rgb(16, ${140 + barHeight * 2}, 100)`;
-
+            : isReceiving
+              ? `rgb(16, ${140 + barHeight * 2}, 180)`
+              : `rgb(16, ${140 + barHeight * 2}, 100)`;
           canvasCtx.fillRect(x, height - barHeight, barWidth - 1, barHeight);
           x += barWidth + 1;
         }
-
-        visualizerAnimFrame = requestAnimationFrame(drawVisualizer);
       }
 
       // --- PeerJS Multi-User Signaling & Mesh Network ---
@@ -2357,15 +2668,6 @@
           { urls: "stun:global.stun.twilio.com:3478" },
           { urls: "stun:stun.services.mozilla.com" },
         ];
-
-        if (customTurnConfig.url.trim() !== "") {
-          const turnObj = { urls: customTurnConfig.url.trim() };
-          if (customTurnConfig.username)
-            turnObj.username = customTurnConfig.username.trim();
-          if (customTurnConfig.password)
-            turnObj.credential = customTurnConfig.password.trim();
-          defaultIceServers.push(turnObj);
-        }
 
         peer = new Peer(myPeerId, {
           config: {
@@ -2403,57 +2705,63 @@
 
         peer.on("error", (err) => {
           console.warn("PeerJS error:", err.type, err.message);
-          if (err.type === "peer-unavailable") {
-            connectedPeersInfo.delete(err.peer);
-            updatePeersListUI();
+          if (err.peer) {
+            removePeerFromChannel(err.peer, { notify: false });
           }
         });
       }
 
       function setupDataConnection(conn) {
         dataConnections.set(conn.peer, conn);
-        connectedPeersInfo.add(conn.peer);
-        updatePeersListUI();
+        touchPeerPresence(conn.peer, { dataOpen: false });
+
+        conn.on("open", () => {
+          touchPeerPresence(conn.peer, { dataOpen: true });
+        });
 
         conn.on("data", (data) => {
+          touchPeerPresence(conn.peer, { lastSeen: Date.now() });
+
           if (data.type === "PTT_START") {
             handlePeerStartedTalking(conn.peer, data.userName);
           } else if (data.type === "PTT_STOP") {
             handlePeerStoppedTalking(conn.peer);
           } else if (data.type === "HELLO") {
-            if (data.displayName) {
-              peerNames.set(conn.peer, data.displayName);
-            }
-            conn.send({ type: "HELLO_ACK", peerId: myPeerId, displayName: myDisplayName });
-            maybeAnnouncePeerJoin(conn.peer);
-            updatePeersListUI();
+            markPeerActive(conn.peer, data.displayName || null);
+            conn.send({
+              type: "HELLO_ACK",
+              peerId: myPeerId,
+              displayName: myDisplayName,
+            });
           } else if (data.type === "HELLO_ACK") {
-            if (data.displayName) {
-              peerNames.set(conn.peer, data.displayName);
-            }
-            maybeAnnouncePeerJoin(conn.peer);
-            updatePeersListUI();
+            markPeerActive(conn.peer, data.displayName || null);
           } else if (data.type === "UPDATE_NAME") {
             if (data.displayName) {
-              peerNames.set(conn.peer, data.displayName);
+              touchPeerPresence(conn.peer, { displayName: data.displayName });
               updatePeersListUI();
             }
           }
         });
 
         conn.on("close", () => {
-          const leftPeerId = conn.peer;
-          notifyMemberLeft(leftPeerId);
-          dataConnections.delete(leftPeerId);
-          connectedPeersInfo.delete(leftPeerId);
-          peerNames.delete(leftPeerId);
-          updatePeersListUI();
+          const shouldNotify = connectedPeersInfo.has(conn.peer);
+          removePeerFromChannel(conn.peer, { notify: shouldNotify });
+        });
+
+        conn.on("error", () => {
+          removePeerFromChannel(conn.peer, { notify: false });
         });
       }
 
       function connectToPeer(targetPeerId) {
-        if (targetPeerId === myPeerId || dataConnections.has(targetPeerId))
-          return;
+        if (targetPeerId === myPeerId) return;
+
+        if (dataConnections.has(targetPeerId)) {
+          if (isPeerConnectionOpen(targetPeerId)) return;
+          removePeerFromChannel(targetPeerId, { notify: false });
+        }
+
+        if (!peer || !peer.open) return;
 
         const conn = peer.connect(targetPeerId);
         conn.on("open", () => {
@@ -2538,10 +2846,9 @@
             console.log("Terhubung ke server signal online global:", topic);
             mqttClient.subscribe(topic, { qos: 0 });
 
-            // Broadcast kehadiran kita ke seluruh perangkat online
             sendMqttPresence("ANNOUNCE");
+            startPresenceMonitor();
 
-            // Routine Heartbeat tiap 8 detik
             heartbeatInterval = setInterval(() => {
               sendMqttPresence("HEARTBEAT");
             }, 8000);
@@ -2552,25 +2859,22 @@
               const payload = JSON.parse(message.toString());
               if (!payload || payload.peerId === myPeerId) return;
 
-              if (payload.type === "ANNOUNCE" || payload.type === "HEARTBEAT" || payload.type === "RESPONSE") {
-                if (payload.displayName) {
-                  peerNames.set(payload.peerId, payload.displayName);
-                  updatePeersListUI();
-                }
+              if (
+                payload.type === "ANNOUNCE" ||
+                payload.type === "HEARTBEAT" ||
+                payload.type === "RESPONSE"
+              ) {
+                touchPeerPresence(payload.peerId, {
+                  displayName: payload.displayName || null,
+                  lastSeen: payload.timestamp || Date.now(),
+                });
                 connectToPeer(payload.peerId);
 
                 if (payload.type === "ANNOUNCE") {
-                  // Respon balik ke perangkat baru agar tahu ID kita
                   sendMqttPresence("RESPONSE");
                 }
               } else if (payload.type === "LEAVE") {
-                notifyMemberLeft(payload.peerId);
-                if (dataConnections.has(payload.peerId)) {
-                  dataConnections.get(payload.peerId).close();
-                }
-                connectedPeersInfo.delete(payload.peerId);
-                peerNames.delete(payload.peerId);
-                updatePeersListUI();
+                removePeerFromChannel(payload.peerId);
               }
             } catch (e) {
               console.error("Gagal membaca pesan signal MQTT:", e);
@@ -2625,6 +2929,9 @@
         }
         audioEl.srcObject = stream;
         audioEl.play().catch(() => {});
+        if (isReceiving && activeBroadcaster === peerId) {
+          setupVisualizerSource(stream);
+        }
       }
 
       function stopRemoteAudio(peerId) {
@@ -2638,23 +2945,40 @@
       }
 
       function handlePeerStartedTalking(peerId, userName) {
+        if (rxHangTimeTimer) {
+          clearTimeout(rxHangTimeTimer);
+          rxHangTimeTimer = null;
+        }
         isReceiving = true;
         activeBroadcaster = peerId;
         playSquelchNoise(0.1);
-        const displayName = peerNames.get(peerId) || peerId.substring(peerId.lastIndexOf("-") + 1);
+        const displayName =
+          peerNames.get(peerId) || peerId.substring(peerId.lastIndexOf("-") + 1);
         updateStatusDisplay("receiving", displayName);
         updatePeersListUI();
-        setupVisualizerSource(
-          remoteAudioElements.get(peerId)?.srcObject || micStream,
-        );
+        const remoteStream = remoteAudioElements.get(peerId)?.srcObject;
+        if (remoteStream) {
+          setupVisualizerSource(remoteStream);
+        }
       }
 
       function handlePeerStoppedTalking(peerId) {
-        isReceiving = false;
-        activeBroadcaster = null;
-        playRogerBeep();
-        updateStatusDisplay("idle");
-        drawVisualizer();
+        if (rxHangTimeTimer) clearTimeout(rxHangTimeTimer);
+
+        rxHangTimeTimer = setTimeout(() => {
+          rxHangTimeTimer = null;
+          if (activeBroadcaster !== peerId && activeBroadcaster !== null) return;
+
+          isReceiving = false;
+          activeBroadcaster = null;
+          playRogerBeep();
+          updateStatusDisplay("idle");
+          syncVoxUiState();
+
+          if (!isTransmitting && micStream) {
+            setupVisualizerSource(micStream);
+          }
+        }, 1500);
       }
 
       // --- PTT Push-to-Talk Action Handlers ---
@@ -2687,23 +3011,36 @@
         }
       }
 
-      function stopTransmitting() {
+      function stopTransmitting(fromVox = false) {
         if (!isTransmitting) return;
 
         isTransmitting = false;
-        setTransmissionGain(false); // Mute the microphone stream immediately
+        setTransmissionGain(false);
+
+        if (!fromVox) voxAutoTriggered = false;
+        if (voxHangTimeTimer) {
+          clearTimeout(voxHangTimeTimer);
+          voxHangTimeTimer = null;
+        }
 
         playRogerBeep();
         updateStatusDisplay("idle");
+        syncVoxUiState();
 
         broadcastData({ type: "PTT_STOP" });
-        drawVisualizer();
+
+        if (micStream) {
+          setupVisualizerSource(micStream);
+        } else {
+          startVisualizerLoop();
+        }
       }
 
       // Update UI Status Displays (LCD & LEDs)
       function updateStatusDisplay(state, peerInfo = "") {
         switch (state) {
           case "transmitting":
+            syncVoxUiState();
             ledIndicator.className =
               "w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_12px_#ef4444] animate-ping";
             ledText.className = "text-[10px] font-mono font-bold text-rose-400";
@@ -2719,6 +3056,7 @@
             break;
 
           case "receiving":
+            syncVoxUiState();
             ledIndicator.className =
               "w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_12px_#22d3ee] animate-pulse";
             ledText.className = "text-[10px] font-mono font-bold text-cyan-400";
@@ -2746,26 +3084,40 @@
             pttSubtext.textContent = voxEnabled
               ? "VOX AKTIF • OTOMATIS BICARA"
               : "TAHAN UNTUK BICARA";
+            syncVoxUiState();
             break;
         }
       }
 
       function updatePeersListUI() {
-        const count = connectedPeersInfo.size + 1;
-        usersCountElem.textContent = `${count} Online`;
+        const onlinePeers = getOnlinePeerIds();
+        usersCountElem.textContent = `${onlinePeers.length + 1} Online`;
 
         peersListElem.innerHTML = "";
 
         const myBadge = document.createElement("span");
         myBadge.className =
           "px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950 border border-emerald-800 text-emerald-300 flex items-center space-x-1";
-        const myShortId = myPeerId ? myPeerId.substring(myPeerId.lastIndexOf("-") + 1) : "?";
+        const myShortId = myPeerId
+          ? myPeerId.substring(myPeerId.lastIndexOf("-") + 1)
+          : "?";
         myBadge.innerHTML = `<i class="fa-solid fa-user-large text-[9px]"></i> <span>Anda: <strong>${myDisplayName}</strong> (${myShortId})</span>`;
         peersListElem.appendChild(myBadge);
 
-        connectedPeersInfo.forEach((pId) => {
+        if (onlinePeers.length === 0) {
+          const emptyHint = document.createElement("span");
+          emptyHint.className =
+            "text-[11px] text-gray-500 italic px-1";
+          emptyHint.textContent = "Belum ada anggota lain di saluran";
+          peersListElem.appendChild(emptyHint);
+          return;
+        }
+
+        onlinePeers.forEach((pId) => {
           const isSpeaking = activeBroadcaster === pId;
-          const pName = peerNames.has(pId) ? peerNames.get(pId) : pId.substring(pId.lastIndexOf("-") + 1);
+          const pName = peerNames.has(pId)
+            ? peerNames.get(pId)
+            : pId.substring(pId.lastIndexOf("-") + 1);
           const peerBadge = document.createElement("span");
           peerBadge.className = `px-2 py-0.5 rounded text-[10px] font-mono border flex items-center space-x-1 ${
             isSpeaking
@@ -2782,7 +3134,7 @@
         PMR_CHANNELS.forEach((ch, idx) => {
           const opt = document.createElement("option");
           opt.value = idx;
-          opt.textContent = `CH ${ch.ch < 10 ? "0" + ch.ch : ch.ch}`;
+          opt.textContent = formatChannelLabel(ch);
           chSelectElem.appendChild(opt);
         });
         chSelectElem.value = currentChannelIdx;
@@ -2865,42 +3217,25 @@
           .getElementById("btn-ch-down")
           .addEventListener("click", () => changeChannel(-1));
 
-        // Custom Room Joining
-        document
-          .getElementById("btn-join-room")
-          .addEventListener("click", async () => {
-            const val = document.getElementById("room-input").value.trim();
-            if (val) {
-              playSquelchNoise(0.05);
-              await switchToRoom(val);
-              showToast(`Frekuensi diubah ke ${roomName}`, "info");
-            }
-          });
-
         // VOX Auto Transmit Toggle
         document.getElementById("toggle-vox").addEventListener("click", () => {
           voxEnabled = !voxEnabled;
-          voxStatusElem.textContent = voxEnabled ? "ON" : "OFF";
-          const toggleBtn = document.getElementById("toggle-vox");
+          syncVoxUiState();
+          persistAppCache();
 
           if (voxEnabled) {
-            toggleBtn.className =
-              "flex items-center space-x-1 px-2.5 py-1.5 rounded bg-amber-950 border border-amber-600 text-amber-300 font-mono text-[11px]";
-            voxBadge.className =
-              "px-1.5 py-0.5 rounded text-[10px] bg-amber-950 text-amber-300 font-bold border border-amber-700 animate-pulse";
-            voxBadge.textContent = "VOX AUTO";
-            voxControlPanel.classList.remove("hidden");
             showToast(
               "VOX Aktif: PTT otomatis terdeteksi saat bicara!",
               "success",
             );
+            if (micStream) setupVisualizerSource(micStream);
+            if (voxAnalyserNode) monitorVoxLevel();
           } else {
-            toggleBtn.className =
-              "flex items-center space-x-1 px-2.5 py-1.5 rounded bg-gray-800 border border-gray-700 text-gray-400 font-mono text-[11px]";
-            voxBadge.className =
-              "px-1.5 py-0.5 rounded text-[10px] bg-emerald-950 text-gray-500 font-bold border border-emerald-900";
-            voxBadge.textContent = "VOX OFF";
-            voxControlPanel.classList.add("hidden");
+            voxAutoTriggered = false;
+            if (voxHangTimeTimer) {
+              clearTimeout(voxHangTimeTimer);
+              voxHangTimeTimer = null;
+            }
             showToast("VOX Nonaktif (Manual PTT)", "info");
           }
           updateStatusDisplay(isTransmitting ? "transmitting" : "idle");
@@ -2911,6 +3246,7 @@
           voxThreshold = parseInt(e.target.value);
           voxSensLabel.textContent = `${voxThreshold}%`;
           voxThresholdMarker.style.left = `${voxThreshold}%`;
+          persistAppCache();
         });
 
         // Filter Toggle
@@ -2921,6 +3257,7 @@
             document.getElementById("filter-status").textContent =
               audioFilterEnabled ? "ON" : "OFF";
             updateAudioFilterRouting();
+            persistAppCache();
             showToast(
               `HT Audio Filter: ${audioFilterEnabled ? "Aktif" : "Nonaktif"}`,
               "info",
@@ -2935,39 +3272,11 @@
             document.getElementById("roger-status").textContent = soundFxEnabled
               ? "ON"
               : "OFF";
+            persistAppCache();
             showToast(
               `Roger Beep: ${soundFxEnabled ? "Aktif" : "Nonaktif"}`,
               "info",
             );
-          });
-
-        // STUN/TURN Modal Listeners
-        const modalTurn = document.getElementById("modal-turn");
-        document
-          .getElementById("btn-open-stun")
-          .addEventListener("click", () => {
-            modalTurn.classList.remove("hidden");
-          });
-        document
-          .getElementById("btn-close-turn")
-          .addEventListener("click", () => {
-            modalTurn.classList.add("hidden");
-          });
-        document
-          .getElementById("btn-save-turn")
-          .addEventListener("click", () => {
-            customTurnConfig.url =
-              document.getElementById("turn-url-input").value;
-            customTurnConfig.username =
-              document.getElementById("turn-user-input").value;
-            customTurnConfig.password =
-              document.getElementById("turn-pass-input").value;
-            modalTurn.classList.add("hidden");
-            showToast(
-              "STUN/TURN diperbarui. Menghubungkan ulang...",
-              "success",
-            );
-            initPeerConnection();
           });
 
         // Share Room Button
@@ -3084,13 +3393,10 @@
 
       async function applyChannelChange() {
         const chObj = PMR_CHANNELS[currentChannelIdx];
-        const chNumStr = chObj.ch < 10 ? `0${chObj.ch}` : `${chObj.ch}`;
 
         playSquelchNoise(0.05);
-        await switchToRoom(`PMR-CH-${chObj.ch}`, {
-          updateChannelUi: { freq: chObj.freq, chNum: chNumStr },
-        });
-        showToast(`Pindah ke ${chObj.freq} (Channel ${chObj.ch})`, "info");
+        await switchToRoom(`PMR-CH-${chObj.ch}`);
+        showToast(`Pindah ke ${formatChannelLabel(chObj)}`, "info");
       }
 
       // --- Username Modal & Operator Identity Flow ---
@@ -3099,17 +3405,32 @@
       async function startAppFlow() {
         if (appStarted || appPoweredOff) return;
 
+        setBootProgress(55, "Mengaktifkan mikrofon...");
         const micOk = await setupMicrophone();
         if (!micOk) {
+          setBootProgress(55, "Menunggu izin mikrofon...");
           return;
         }
 
+        setBootProgress(75, "Menghubungkan saluran radio...");
         appStarted = true;
-        initPeerConnection();
+        initPeerConnection({ skipLeave: true });
+        await waitForPeerOpen();
+
+        setBootProgress(90, "Menyiapkan layanan latar...");
         await requestWakeLock();
         startBackgroundKeepAlive();
         startNetworkMonitor();
         requestNotificationPermission();
+        persistAppCache();
+
+        setBootProgress(100, "Sistem siap!");
+        hideBootOverlay();
+        if (micStream) {
+          setupVisualizerSource(micStream);
+        } else {
+          startVisualizerLoop();
+        }
       }
 
       function showUsernameModal() {
@@ -3172,7 +3493,6 @@
         freqDisplay = document.getElementById("freq-display");
         channelNumDisplay = document.getElementById("channel-num-display");
         chSelectElem = document.getElementById("channel-select");
-        currentRoomNameElem = document.getElementById("current-room-name");
         canvas = document.getElementById("visualizer");
         canvasCtx = canvas.getContext("2d");
         noAudioText = document.getElementById("no-audio-text");
@@ -3189,13 +3509,11 @@
         networkQualityDotElem = document.getElementById("network-quality-dot");
         rssiSignalIconElem = document.getElementById("rssi-signal-icon");
 
-        populateChannelDropdown();
+        initBootLogo();
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has("room")) {
           roomName = urlParams.get("room");
-          document.getElementById("room-input").value = roomName;
-          currentRoomNameElem.textContent = roomName;
           syncChannelIndexFromRoom();
         }
 
@@ -3204,23 +3522,28 @@
         micSourceMode = localStorage.getItem(MIC_SOURCE_KEY) || "internal";
         selectedMicDeviceId = localStorage.getItem(MIC_DEVICE_KEY) || "";
 
+        setBootProgress(15, "Memuat cache pengaturan...");
+        applyAppCache();
+        populateChannelDropdown();
+
+        setBootProgress(30, "Menyiapkan antarmuka...");
         setupEventListeners();
         registerPwaServiceWorker();
         setupVisibilityHandlers();
-        startNetworkMonitor();
+        applyCachedSettingsUI();
 
-        if (isPwaStandalone()) {
-          showToast("PTT SIBAGUS aktif — mode aplikasi", "success");
-        }
-
-        // Check localStorage for saved display name
         const savedName = localStorage.getItem("ht_display_name");
         if (savedName && savedName.trim() !== "") {
           myDisplayName = savedName.trim();
-          startAppFlow();
+          setBootProgress(50, "Menghubungkan ke saluran...");
+          await startAppFlow();
         } else {
-          // Show modal for first time users
+          setBootProgress(50, "Menunggu identitas operator...");
           showUsernameModal();
+        }
+
+        if (isPwaStandalone()) {
+          showToast("PTT SIBAGUS aktif — mode aplikasi", "success");
         }
       });
     </script>
