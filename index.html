@@ -938,6 +938,7 @@
       // Global Online Signaling State (MQTT)
       let mqttClient = null;
       let heartbeatInterval = null;
+      let channelBroadcast = null;
 
       // Audio State
       let audioCtx = null;
@@ -1811,6 +1812,14 @@
           micTrack.enabled = true;
           micTrack.onended = () => {
             micWarning.classList.remove("hidden");
+            if (micSourceMode === "speaker") {
+              micSourceMode = "internal";
+              localStorage.setItem(MIC_SOURCE_KEY, "internal");
+              showToast(
+                "Capture speaker terputus. Mic kembali ke internal.",
+                "warning",
+              );
+            }
             showToast("Akses mikrofon terputus.", "warning");
           };
 
@@ -1905,6 +1914,125 @@
         }
       }
 
+      function leaveCurrentChannel({ sendLeave = true } = {}) {
+        if (isTransmitting) stopTransmitting();
+        isReceiving = false;
+        activeBroadcaster = null;
+
+        if (sendLeave && mqttClient?.connected && myPeerId) {
+          sendMqttPresence("LEAVE");
+        }
+
+        activeCalls.forEach((call) => {
+          try {
+            call.close();
+          } catch (e) {}
+        });
+        activeCalls.clear();
+
+        dataConnections.forEach((conn) => {
+          try {
+            conn.close();
+          } catch (e) {}
+        });
+        dataConnections.clear();
+
+        connectedPeersInfo.clear();
+        peerNames.clear();
+        notifiedJoinPeers.clear();
+
+        remoteAudioElements.forEach((el) => {
+          el.pause();
+          el.srcObject = null;
+          el.remove();
+        });
+        remoteAudioElements.clear();
+
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval);
+          heartbeatInterval = null;
+        }
+
+        if (mqttClient) {
+          try {
+            mqttClient.end(true);
+          } catch (e) {}
+          mqttClient = null;
+        }
+
+        if (channelBroadcast) {
+          try {
+            channelBroadcast.close();
+          } catch (e) {}
+          channelBroadcast = null;
+        }
+
+        if (peer) {
+          try {
+            peer.destroy();
+          } catch (e) {}
+          peer = null;
+        }
+
+        updatePeersListUI();
+      }
+
+      async function ensureAudioPipelineReady() {
+        if (appPoweredOff) return false;
+
+        if (!isMicStreamActive()) {
+          if (micSourceMode === "speaker") {
+            micSourceMode = "internal";
+            localStorage.setItem(MIC_SOURCE_KEY, "internal");
+          }
+          return setupMicrophone(true);
+        }
+
+        initAudioContext();
+        if (!outgoingStream || !micSourceNode) {
+          setupOutgoingAudioGraph(micStream);
+          setupVisualizerSource(micStream);
+          setupVoxAnalyser(micStream);
+        }
+        return true;
+      }
+
+      function syncChannelIndexFromRoom() {
+        const chMatch = roomName.match(/PMR-CH-(\d+)/i);
+        if (!chMatch) return;
+        const chNum = parseInt(chMatch[1], 10);
+        const idx = PMR_CHANNELS.findIndex((c) => c.ch === chNum);
+        if (idx >= 0) {
+          currentChannelIdx = idx;
+          if (chSelectElem) chSelectElem.value = currentChannelIdx;
+        }
+      }
+
+      async function switchToRoom(newRoomName, { updateChannelUi = null } = {}) {
+        leaveCurrentChannel({ sendLeave: true });
+
+        roomName = newRoomName;
+        document.getElementById("room-input").value = roomName;
+        currentRoomNameElem.textContent = roomName;
+
+        if (updateChannelUi) {
+          freqDisplay.textContent = updateChannelUi.freq;
+          channelNumDisplay.textContent = updateChannelUi.chNum;
+        } else {
+          syncChannelIndexFromRoom();
+          const chObj = PMR_CHANNELS[currentChannelIdx];
+          if (roomName.toUpperCase() === `PMR-CH-${chObj.ch}`.toUpperCase()) {
+            freqDisplay.textContent = chObj.freq;
+            channelNumDisplay.textContent =
+              chObj.ch < 10 ? `0${chObj.ch}` : `${chObj.ch}`;
+          }
+        }
+
+        updateShareMeta();
+        await ensureAudioPipelineReady();
+        initPeerConnection({ skipLeave: true });
+      }
+
       function setupVisibilityHandlers() {
         document.addEventListener("visibilitychange", async () => {
           if (appPoweredOff) return;
@@ -1927,50 +2055,7 @@
       }
 
       function teardownConnections() {
-        if (isTransmitting) stopTransmitting();
-
-        activeCalls.forEach((call) => {
-          try {
-            call.close();
-          } catch (e) {}
-        });
-        activeCalls.clear();
-
-        dataConnections.forEach((conn) => {
-          try {
-            conn.close();
-          } catch (e) {}
-        });
-        dataConnections.clear();
-        connectedPeersInfo.clear();
-        peerNames.clear();
-        notifiedJoinPeers.clear();
-        activeBroadcaster = null;
-
-        remoteAudioElements.forEach((el) => {
-          el.pause();
-          el.srcObject = null;
-          el.remove();
-        });
-        remoteAudioElements.clear();
-
-        if (heartbeatInterval) {
-          clearInterval(heartbeatInterval);
-          heartbeatInterval = null;
-        }
-        if (mqttClient) {
-          try {
-            sendMqttPresence("LEAVE");
-            mqttClient.end(true);
-          } catch (e) {}
-          mqttClient = null;
-        }
-        if (peer) {
-          try {
-            peer.destroy();
-          } catch (e) {}
-          peer = null;
-        }
+        leaveCurrentChannel({ sendLeave: true });
         myPeerId = "";
       }
 
@@ -2253,17 +2338,15 @@
       }
 
       // --- PeerJS Multi-User Signaling & Mesh Network ---
-      function initPeerConnection() {
+      function initPeerConnection({ skipLeave = false } = {}) {
+        if (!skipLeave) {
+          leaveCurrentChannel({ sendLeave: true });
+        }
+
         const sanitizedRoom = roomName.toUpperCase().replace(/[^A-Z0-9]/g, "");
         const uniqueSuffix = Math.random().toString(36).substring(2, 6);
         myPeerId = `HT-${sanitizedRoom}-${uniqueSuffix}`;
         updateMyDisplayCallsign();
-
-        if (peer) {
-          peer.destroy();
-        }
-
-        notifiedJoinPeers.clear();
 
         const defaultIceServers = [
           { urls: "stun:stun.l.google.com:19302" },
@@ -2299,7 +2382,8 @@
 
         peer.on("call", (call) => {
           console.log("Incoming call from:", call.peer);
-          call.answer(outgoingStream || micStream);
+          const answerStream = outgoingStream || micStream;
+          call.answer(answerStream);
 
           call.on("stream", (remoteStream) => {
             playRemoteAudio(remoteStream, call.peer);
@@ -2307,6 +2391,7 @@
 
           call.on("close", () => {
             stopRemoteAudio(call.peer);
+            activeCalls.delete(call.peer);
           });
 
           activeCalls.set(call.peer, call);
@@ -2376,16 +2461,15 @@
           conn.send({ type: "HELLO", peerId: myPeerId, displayName: myDisplayName });
         });
 
-        if (outgoingStream) {
-          const call = peer.call(targetPeerId, outgoingStream);
+        const streamToSend = outgoingStream || micStream;
+        if (streamToSend) {
+          const call = peer.call(targetPeerId, streamToSend);
           call.on("stream", (remoteStream) => {
             playRemoteAudio(remoteStream, targetPeerId);
           });
-          activeCalls.set(targetPeerId, call);
-        } else if (micStream) {
-          const call = peer.call(targetPeerId, micStream);
-          call.on("stream", (remoteStream) => {
-            playRemoteAudio(remoteStream, targetPeerId);
+          call.on("close", () => {
+            stopRemoteAudio(targetPeerId);
+            activeCalls.delete(targetPeerId);
           });
           activeCalls.set(targetPeerId, call);
         }
@@ -2395,16 +2479,27 @@
         // 1. Local Browser Tab Fallback
         if (window.BroadcastChannel) {
           try {
-            const bc = new BroadcastChannel(`HT_CHANNEL_${roomName}`);
-            bc.postMessage({ type: "ANNOUNCE_PEER", peerId: myPeerId });
+            if (channelBroadcast) {
+              channelBroadcast.close();
+              channelBroadcast = null;
+            }
 
-            bc.onmessage = (event) => {
+            channelBroadcast = new BroadcastChannel(`HT_CHANNEL_${roomName}`);
+            channelBroadcast.postMessage({
+              type: "ANNOUNCE_PEER",
+              peerId: myPeerId,
+            });
+
+            channelBroadcast.onmessage = (event) => {
               if (
                 event.data.type === "ANNOUNCE_PEER" &&
                 event.data.peerId !== myPeerId
               ) {
                 connectToPeer(event.data.peerId);
-                bc.postMessage({ type: "ANNOUNCE_ACK", peerId: myPeerId });
+                channelBroadcast.postMessage({
+                  type: "ANNOUNCE_ACK",
+                  peerId: myPeerId,
+                });
               } else if (
                 event.data.type === "ANNOUNCE_ACK" &&
                 event.data.peerId !== myPeerId
@@ -2425,12 +2520,6 @@
         if (heartbeatInterval) {
           clearInterval(heartbeatInterval);
           heartbeatInterval = null;
-        }
-
-        if (mqttClient) {
-          try {
-            mqttClient.end(true);
-          } catch (e) {}
         }
 
         const brokerUrl = "wss://broker.emqx.io:8084/mqtt";
@@ -2779,13 +2868,11 @@
         // Custom Room Joining
         document
           .getElementById("btn-join-room")
-          .addEventListener("click", () => {
+          .addEventListener("click", async () => {
             const val = document.getElementById("room-input").value.trim();
             if (val) {
-              roomName = val;
-              currentRoomNameElem.textContent = roomName;
-              updateShareMeta();
-              initPeerConnection();
+              playSquelchNoise(0.05);
+              await switchToRoom(val);
               showToast(`Frekuensi diubah ke ${roomName}`, "info");
             }
           });
@@ -2995,20 +3082,14 @@
         applyChannelChange();
       }
 
-      function applyChannelChange() {
+      async function applyChannelChange() {
         const chObj = PMR_CHANNELS[currentChannelIdx];
+        const chNumStr = chObj.ch < 10 ? `0${chObj.ch}` : `${chObj.ch}`;
 
-        freqDisplay.textContent = chObj.freq;
-        channelNumDisplay.textContent =
-          chObj.ch < 10 ? `0${chObj.ch}` : chObj.ch;
-
-        roomName = `PMR-CH-${chObj.ch}`;
-        document.getElementById("room-input").value = roomName;
-        currentRoomNameElem.textContent = roomName;
-
-        updateShareMeta();
         playSquelchNoise(0.05);
-        initPeerConnection();
+        await switchToRoom(`PMR-CH-${chObj.ch}`, {
+          updateChannelUi: { freq: chObj.freq, chNum: chNumStr },
+        });
         showToast(`Pindah ke ${chObj.freq} (Channel ${chObj.ch})`, "info");
       }
 
@@ -3115,6 +3196,7 @@
           roomName = urlParams.get("room");
           document.getElementById("room-input").value = roomName;
           currentRoomNameElem.textContent = roomName;
+          syncChannelIndexFromRoom();
         }
 
         updateShareMeta();
