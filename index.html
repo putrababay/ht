@@ -797,7 +797,9 @@
 
         micSourceNode = audioCtx.createMediaStreamSource(stream);
         outgoingGainNode = audioCtx.createGain();
-        outgoingGainNode.gain.setValueAtTime(0, audioCtx.currentTime); // Start muted (PTT off)
+        // Hard mute — ensure absolutely no audio leaks through until PTT is pressed
+        outgoingGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+        outgoingGainNode.gain.setValueAtTime(0, audioCtx.currentTime);
 
         outgoingStreamDestination = audioCtx.createMediaStreamDestination();
         outgoingStream = outgoingStreamDestination.stream;
@@ -850,10 +852,14 @@
       function setTransmissionGain(on) {
         if (!audioCtx || !outgoingGainNode) return;
         const now = audioCtx.currentTime;
+        outgoingGainNode.gain.cancelScheduledValues(now);
         if (on) {
-          outgoingGainNode.gain.setTargetAtTime(1, now, 0.01);
+          // Ramp up fast to avoid click artifact
+          outgoingGainNode.gain.setValueAtTime(0, now);
+          outgoingGainNode.gain.linearRampToValueAtTime(1, now + 0.015);
         } else {
-          outgoingGainNode.gain.setTargetAtTime(0, now, 0.01);
+          // Hard zero immediately — no leakage
+          outgoingGainNode.gain.setValueAtTime(0, now);
         }
       }
 
@@ -1299,7 +1305,9 @@
         isReceiving = true;
         activeBroadcaster = peerId;
         playSquelchNoise(0.1);
-        updateStatusDisplay("receiving", peerId);
+        const displayName = peerNames.get(peerId) || peerId.substring(peerId.lastIndexOf("-") + 1);
+        updateStatusDisplay("receiving", displayName);
+        updatePeersListUI();
         setupVisualizerSource(
           remoteAudioElements.get(peerId)?.srcObject || micStream,
         );
@@ -1381,7 +1389,7 @@
             ledText.textContent = "RX (RECEIVE)";
             txRxBadge.className =
               "px-1.5 py-0.5 rounded text-[10px] bg-cyan-950 text-cyan-300 font-bold border border-cyan-700";
-            txRxBadge.textContent = `RX: ${peerInfo.substring(0, 10)}...`;
+            txRxBadge.textContent = `RX: ${peerInfo}`;
             pttBtn.className =
               "w-40 h-40 rounded-full ptt-idle border-4 border-cyan-600 opacity-60 flex flex-col items-center justify-center text-gray-400 no-select cursor-not-allowed";
             pttSubtext.textContent = "SALURAN SIBUK";
@@ -1415,18 +1423,20 @@
         const myBadge = document.createElement("span");
         myBadge.className =
           "px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950 border border-emerald-800 text-emerald-300 flex items-center space-x-1";
-        myBadge.innerHTML = `<i class="fa-solid fa-user-large text-[9px]"></i> <span>Anda (${myPeerId.substring(0, 8)})</span>`;
+        const myShortId = myPeerId ? myPeerId.substring(myPeerId.lastIndexOf("-") + 1) : "?";
+        myBadge.innerHTML = `<i class="fa-solid fa-user-large text-[9px]"></i> <span>Anda: <strong>${myDisplayName}</strong> (${myShortId})</span>`;
         peersListElem.appendChild(myBadge);
 
         connectedPeersInfo.forEach((pId) => {
           const isSpeaking = activeBroadcaster === pId;
+          const pName = peerNames.has(pId) ? peerNames.get(pId) : pId.substring(pId.lastIndexOf("-") + 1);
           const peerBadge = document.createElement("span");
           peerBadge.className = `px-2 py-0.5 rounded text-[10px] font-mono border flex items-center space-x-1 ${
             isSpeaking
               ? "bg-cyan-950 border-cyan-600 text-cyan-300 animate-pulse"
               : "bg-gray-800 border-gray-700 text-gray-300"
           }`;
-          peerBadge.innerHTML = `<i class="fa-solid ${isSpeaking ? "fa-walkie-talkie text-cyan-400" : "fa-user"} text-[9px]"></i> <span>${pId.substring(0, 10)}</span>`;
+          peerBadge.innerHTML = `<i class="fa-solid ${isSpeaking ? "fa-walkie-talkie text-cyan-400" : "fa-user"} text-[9px]"></i> <span>${pName}${isSpeaking ? " 📢" : ""}</span>`;
           peersListElem.appendChild(peerBadge);
         });
       }
@@ -1663,6 +1673,21 @@
             });
           });
         });
+
+        // Username Modal Listeners
+        document.getElementById("btn-save-username").addEventListener("click", handleSaveUsername);
+        document.getElementById("username-input").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            handleSaveUsername();
+          }
+        });
+        document.getElementById("btn-edit-username").addEventListener("click", () => {
+          showUsernameModal();
+        });
+        document.getElementById("my-peer-id").addEventListener("click", () => {
+          showUsernameModal();
+        });
       }
 
       // Service Worker registration for PWA
@@ -1800,8 +1825,16 @@
 
         setupEventListeners();
         registerPwaServiceWorker();
-        await setupMicrophone();
-        initPeerConnection();
+
+        // Check localStorage for saved display name
+        const savedName = localStorage.getItem("ht_display_name");
+        if (savedName && savedName.trim() !== "") {
+          myDisplayName = savedName.trim();
+          startAppFlow();
+        } else {
+          // Show modal for first time users
+          showUsernameModal();
+        }
       });
     </script>
   </body>
