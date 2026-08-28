@@ -1,4 +1,4 @@
-const CACHE_NAME = "tactical-ht-v4";
+const CACHE_NAME = "ptt-sibagus-v5";
 const APP_SHELL = ["/", "/index.html", "/manifest.json", "/icon-512.png"];
 
 const CDN_ASSETS = [

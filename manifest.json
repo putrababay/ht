@@ -1,8 +1,8 @@
 {
   "id": "https://ptt.sibag.us/",
-  "name": "Tactical HT Walkie Talkie",
-  "short_name": "Tactical HT",
-  "description": "Aplikasi HT Push-to-Talk Realtime berbasis WebRTC PWA",
+  "name": "PTT SIBAGUS",
+  "short_name": "PTT SIBAGUS",
+  "description": "Aplikasi Push-to-Talk realtime PTT SIBAGUS — komunikasi walkie-talkie online multi-saluran berbasis WebRTC.",
   "lang": "id",
   "dir": "ltr",
   "start_url": "/",

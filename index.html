@@ -6,25 +6,52 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, user-scalable=no"
     />
-    <title>HT Push-to-Talk (PTT) Realtime</title>
+    <title>PTT SIBAGUS — Push-to-Talk Realtime</title>
 
     <!-- PWA Primary Meta Tags -->
     <meta name="theme-color" content="#030712" />
     <meta
       name="description"
-      content="Aplikasi HT Push-to-Talk Realtime berbasis WebRTC PWA — Tactical HT untuk komunikasi PMR online."
+      content="PTT SIBAGUS — Aplikasi Push-to-Talk realtime untuk komunikasi walkie-talkie online multi-saluran PMR berbasis WebRTC PWA."
     />
-    <meta name="application-name" content="Tactical HT" />
+    <meta name="application-name" content="PTT SIBAGUS" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
-    <meta name="apple-mobile-web-app-title" content="Tactical HT" />
+    <meta name="apple-mobile-web-app-title" content="PTT SIBAGUS" />
     <link rel="canonical" href="https://ptt.sibag.us/" />
     <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
     <link rel="apple-touch-icon" href="/icon-512.png" />
+
+    <!-- Open Graph / Social Share Meta -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://ptt.sibag.us/" />
+    <meta property="og:site_name" content="PTT SIBAGUS" />
+    <meta property="og:title" content="PTT SIBAGUS — Push-to-Talk Realtime" />
+    <meta
+      property="og:description"
+      id="meta-og-description"
+      content="PTT SIBAGUS — Aplikasi Push-to-Talk realtime untuk komunikasi walkie-talkie online multi-saluran PMR berbasis WebRTC PWA."
+    />
+    <meta property="og:image" content="https://ptt.sibag.us/icon-512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="Logo PTT SIBAGUS" />
+    <meta property="og:locale" content="id_ID" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="PTT SIBAGUS — Push-to-Talk Realtime" />
+    <meta
+      name="twitter:description"
+      id="meta-twitter-description"
+      content="PTT SIBAGUS — Aplikasi Push-to-Talk realtime untuk komunikasi walkie-talkie online multi-saluran PMR berbasis WebRTC PWA."
+    />
+    <meta name="twitter:image" content="https://ptt.sibag.us/icon-512.png" />
+    <meta name="twitter:image:alt" content="Logo PTT SIBAGUS" />
 
     <!-- Web App Manifest -->
     <link rel="manifest" href="/manifest.json" />
@@ -129,10 +156,11 @@
         <div class="flex items-center space-x-2">
           <button
             id="btn-pwa-install"
-            class="hidden text-[10px] bg-amber-600 hover:bg-amber-500 text-white font-bold px-2 py-1 rounded shadow flex items-center space-x-1 animate-bounce"
+            class="hidden text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-2 py-1 rounded shadow flex items-center space-x-1"
+            title="Install aplikasi PTT SIBAGUS"
           >
             <i class="fa-solid fa-download"></i>
-            <span>Install App</span>
+            <span>Install</span>
           </button>
           <span
             id="wakelock-badge"
@@ -604,6 +632,66 @@
       </div>
     </div>
 
+    <!-- PWA Install Modal -->
+    <div
+      id="modal-pwa-install"
+      class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-gray-900 border-2 border-emerald-700/80 rounded-2xl w-full max-w-sm p-5 text-gray-200 shadow-2xl"
+      >
+        <div class="text-center mb-4">
+          <img
+            src="/icon-512.png"
+            alt="PTT SIBAGUS"
+            class="w-16 h-16 rounded-2xl mx-auto mb-3 border border-emerald-800 shadow-lg"
+          />
+          <h3 class="font-extrabold text-emerald-400 text-base tracking-wider uppercase">
+            Install PTT SIBAGUS
+          </h3>
+          <p class="text-[11px] text-gray-400 mt-1">
+            Pasang aplikasi di perangkat untuk akses cepat &amp; mode layar penuh
+          </p>
+        </div>
+
+        <div id="pwa-install-android" class="hidden mb-3">
+          <button
+            id="btn-pwa-install-confirm"
+            type="button"
+            class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2.5 rounded-lg border border-emerald-500 flex items-center justify-center space-x-2"
+          >
+            <i class="fa-solid fa-download"></i>
+            <span>Install Sekarang</span>
+          </button>
+        </div>
+
+        <div id="pwa-install-ios" class="hidden text-[11px] text-gray-300 space-y-2 mb-3 bg-gray-950/60 p-3 rounded-lg border border-gray-800">
+          <p class="font-bold text-amber-400 text-xs uppercase">iPhone / iPad (Safari):</p>
+          <ol class="list-decimal list-inside space-y-1 text-gray-400">
+            <li>Buka di browser <strong class="text-gray-200">Safari</strong></li>
+            <li>Tap tombol <strong class="text-gray-200">Bagikan</strong> <i class="fa-solid fa-share-from-square"></i></li>
+            <li>Pilih <strong class="text-gray-200">"Add to Home Screen"</strong></li>
+            <li>Tap <strong class="text-gray-200">Add</strong></li>
+          </ol>
+        </div>
+
+        <div id="pwa-install-desktop" class="hidden text-[11px] text-gray-400 mb-3 bg-gray-950/60 p-3 rounded-lg border border-gray-800">
+          <p>
+            Di Chrome/Edge, klik ikon <i class="fa-solid fa-download"></i> di bilah alamat
+            atau menu <strong class="text-gray-200">Install PTT SIBAGUS</strong>.
+          </p>
+        </div>
+
+        <button
+          id="btn-pwa-install-close"
+          type="button"
+          class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs py-2 rounded-lg border border-gray-700"
+        >
+          Tutup
+        </button>
+      </div>
+    </div>
+
     <!-- Power Off Confirmation Modal -->
     <div
       id="modal-poweroff"
@@ -761,6 +849,114 @@
           return window.location.origin;
         }
         return PWA_ORIGIN;
+      }
+
+      function isIosDevice() {
+        return /iphone|ipad|ipod/i.test(navigator.userAgent);
+      }
+
+      function updateShareMeta() {
+        const baseUrl = getShareBaseUrl();
+        const shareUrl = `${baseUrl}/?room=${encodeURIComponent(roomName)}`;
+        const pageTitle = `PTT SIBAGUS — ${roomName}`;
+        const pageDesc = `Gabung saluran ${roomName} di PTT SIBAGUS. Push-to-Talk realtime multi-pengguna via WebRTC.`;
+
+        document.title = pageTitle;
+
+        const descMeta = document.querySelector('meta[name="description"]');
+        if (descMeta) descMeta.setAttribute("content", pageDesc);
+
+        const ogTitle = document.querySelector('meta[property="og:title"]');
+        if (ogTitle) ogTitle.setAttribute("content", pageTitle);
+
+        const ogDesc = document.getElementById("meta-og-description");
+        if (ogDesc) ogDesc.setAttribute("content", pageDesc);
+
+        const ogUrl = document.querySelector('meta[property="og:url"]');
+        if (ogUrl) ogUrl.setAttribute("content", shareUrl);
+
+        const twTitle = document.querySelector('meta[name="twitter:title"]');
+        if (twTitle) twTitle.setAttribute("content", pageTitle);
+
+        const twDesc = document.getElementById("meta-twitter-description");
+        if (twDesc) twDesc.setAttribute("content", pageDesc);
+      }
+
+      function updatePwaInstallButton() {
+        const installBtn = document.getElementById("btn-pwa-install");
+        if (!installBtn) return;
+        if (isPwaStandalone()) {
+          installBtn.classList.add("hidden");
+        } else {
+          installBtn.classList.remove("hidden");
+        }
+      }
+
+      function showPwaInstallModal() {
+        const modal = document.getElementById("modal-pwa-install");
+        const androidPanel = document.getElementById("pwa-install-android");
+        const iosPanel = document.getElementById("pwa-install-ios");
+        const desktopPanel = document.getElementById("pwa-install-desktop");
+
+        androidPanel.classList.add("hidden");
+        iosPanel.classList.add("hidden");
+        desktopPanel.classList.add("hidden");
+
+        if (deferredPwaPrompt) {
+          androidPanel.classList.remove("hidden");
+        } else if (isIosDevice()) {
+          iosPanel.classList.remove("hidden");
+        } else {
+          desktopPanel.classList.remove("hidden");
+        }
+
+        modal.classList.remove("hidden");
+      }
+
+      async function triggerPwaInstall() {
+        if (!deferredPwaPrompt) {
+          showPwaInstallModal();
+          return;
+        }
+
+        deferredPwaPrompt.prompt();
+        const { outcome } = await deferredPwaPrompt.userChoice;
+        if (outcome === "accepted") {
+          document.getElementById("btn-pwa-install")?.classList.add("hidden");
+          document.getElementById("modal-pwa-install")?.classList.add("hidden");
+          showToast("PTT SIBAGUS berhasil diinstall!", "success");
+        }
+        deferredPwaPrompt = null;
+      }
+
+      function setupPwaInstall() {
+        updatePwaInstallButton();
+
+        const installBtn = document.getElementById("btn-pwa-install");
+        installBtn?.addEventListener("click", triggerPwaInstall);
+
+        document
+          .getElementById("btn-pwa-install-confirm")
+          ?.addEventListener("click", triggerPwaInstall);
+
+        document
+          .getElementById("btn-pwa-install-close")
+          ?.addEventListener("click", () => {
+            document.getElementById("modal-pwa-install").classList.add("hidden");
+          });
+
+        window.addEventListener("beforeinstallprompt", (e) => {
+          e.preventDefault();
+          deferredPwaPrompt = e;
+          updatePwaInstallButton();
+        });
+
+        window.addEventListener("appinstalled", () => {
+          deferredPwaPrompt = null;
+          updatePwaInstallButton();
+          document.getElementById("modal-pwa-install")?.classList.add("hidden");
+          showToast("PTT SIBAGUS berhasil diinstall!", "success");
+        });
       }
 
       // Wake Lock & Background Keep-Alive State
@@ -1215,7 +1411,7 @@
 
         if ("mediaSession" in navigator) {
           navigator.mediaSession.metadata = new MediaMetadata({
-            title: "Tactical HT",
+            title: "PTT SIBAGUS",
             artist: "Push-to-Talk Aktif",
             album: roomName,
           });
@@ -2112,6 +2308,7 @@
             if (val) {
               roomName = val;
               currentRoomNameElem.textContent = roomName;
+              updateShareMeta();
               initPeerConnection();
               showToast(`Frekuensi diubah ke ${roomName}`, "info");
             }
@@ -2230,24 +2427,8 @@
           }
         });
 
-        // PWA Install Event Listener
-        window.addEventListener("beforeinstallprompt", (e) => {
-          e.preventDefault();
-          deferredPwaPrompt = e;
-          const installBtn = document.getElementById("btn-pwa-install");
-          installBtn.classList.remove("hidden");
-
-          installBtn.addEventListener("click", () => {
-            installBtn.classList.add("hidden");
-            deferredPwaPrompt.prompt();
-            deferredPwaPrompt.userChoice.then((choiceResult) => {
-              if (choiceResult.outcome === "accepted") {
-                showToast("Aplikasi PWA Berhasil Diinstall!", "success");
-              }
-              deferredPwaPrompt = null;
-            });
-          });
-        });
+        // PWA Install
+        setupPwaInstall();
 
         // Username Modal Listeners
         document.getElementById("btn-save-username").addEventListener("click", handleSaveUsername);
@@ -2348,6 +2529,7 @@
         document.getElementById("room-input").value = roomName;
         currentRoomNameElem.textContent = roomName;
 
+        updateShareMeta();
         playSquelchNoise(0.05);
         initPeerConnection();
         showToast(`Pindah ke ${chObj.freq} (Channel ${chObj.ch})`, "info");
@@ -2457,13 +2639,14 @@
           currentRoomNameElem.textContent = roomName;
         }
 
+        updateShareMeta();
         setupEventListeners();
         registerPwaServiceWorker();
         setupVisibilityHandlers();
         startNetworkMonitor();
 
         if (isPwaStandalone()) {
-          showToast("Mode PWA aktif — HT siap digunakan", "success");
+          showToast("PTT SIBAGUS aktif — mode aplikasi", "success");
         }
 
         // Check localStorage for saved display name
