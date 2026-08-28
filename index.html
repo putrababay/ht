@@ -146,10 +146,10 @@
           <i class="fa-solid text-amber-500 text-lg">📻</i>
           <div>
             <h1 class="font-extrabold text-sm tracking-wider text-gray-200">
-              TACTICAL HT-99 PRO
+               HT SIBAGUS
             </h1>
             <p class="text-[10px] text-gray-400">
-              WebRTC PWA • 16-CH PMR • VOX Auto
+              WebRTC PWA • VOX Auto
             </p>
           </div>
         </div>
@@ -388,6 +388,16 @@
             <i class="fa-solid fa-network-wired"></i>
             <span>STUN</span>
           </button>
+
+          <!-- Microphone Settings -->
+          <button
+            id="btn-open-mic"
+            class="flex items-center space-x-1 px-2 py-1.5 rounded bg-purple-950 border border-purple-800 text-purple-300 font-mono text-[11px]"
+            title="Pengaturan mikrofon"
+          >
+            <i class="fa-solid fa-microphone"></i>
+            <span>MIC</span>
+          </button>
         </div>
 
         <!-- VOX Sensitivity Slider & Level Meter (Hidden by default until VOX ON) -->
@@ -499,6 +509,137 @@
           <span class="text-[11px] text-gray-500 italic"
             >Mencari anggota lain...</span
           >
+        </div>
+      </div>
+    </div>
+
+    <!-- Microphone Settings Modal -->
+    <div
+      id="modal-mic"
+      class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-gray-900 border border-purple-800/60 rounded-2xl w-full max-w-sm p-4 text-gray-200 shadow-2xl"
+      >
+        <div
+          class="flex justify-between items-center border-b border-gray-800 pb-2 mb-3"
+        >
+          <h3
+            class="font-bold text-purple-400 text-sm flex items-center space-x-2"
+          >
+            <i class="fa-solid fa-microphone"></i>
+            <span>Pengaturan Mikrofon</span>
+          </h3>
+          <button
+            id="btn-close-mic"
+            type="button"
+            class="text-gray-400 hover:text-white font-bold"
+          >
+            &times;
+          </button>
+        </div>
+
+        <p class="text-[11px] text-gray-400 mb-3">
+          Pilih sumber audio untuk transmisi PTT. Gunakan
+          <strong class="text-purple-300">Speaker Perangkat</strong> untuk
+          mengambil suara langsung dari output speaker HP/PC.
+        </p>
+
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="block text-[10px] font-mono text-gray-400 uppercase mb-2"
+              >Sumber Audio</label
+            >
+            <div class="space-y-2">
+              <label
+                class="flex items-center space-x-2 p-2 rounded-lg border border-gray-800 bg-gray-950 cursor-pointer hover:border-purple-700 has-[:checked]:border-purple-600 has-[:checked]:bg-purple-950/30"
+              >
+                <input
+                  type="radio"
+                  name="mic-source-mode"
+                  value="internal"
+                  class="accent-purple-500"
+                  checked
+                />
+                <div>
+                  <span class="font-bold text-gray-200">Mikrofon Internal</span>
+                  <p class="text-[10px] text-gray-500">
+                    Mic bawaan perangkat (speakerphone / HP sendiri)
+                  </p>
+                </div>
+              </label>
+              <label
+                class="flex items-center space-x-2 p-2 rounded-lg border border-gray-800 bg-gray-950 cursor-pointer hover:border-purple-700 has-[:checked]:border-purple-600 has-[:checked]:bg-purple-950/30"
+              >
+                <input
+                  type="radio"
+                  name="mic-source-mode"
+                  value="speaker"
+                  class="accent-purple-500"
+                />
+                <div>
+                  <span class="font-bold text-gray-200">Audio dari Speaker</span>
+                  <p class="text-[10px] text-gray-500">
+                    Ambil suara langsung dari output speaker perangkat
+                  </p>
+                </div>
+              </label>
+              <label
+                class="flex items-center space-x-2 p-2 rounded-lg border border-gray-800 bg-gray-950 cursor-pointer hover:border-purple-700 has-[:checked]:border-purple-600 has-[:checked]:bg-purple-950/30"
+              >
+                <input
+                  type="radio"
+                  name="mic-source-mode"
+                  value="device"
+                  class="accent-purple-500"
+                />
+                <div>
+                  <span class="font-bold text-gray-200">Pilih Manual</span>
+                  <p class="text-[10px] text-gray-500">
+                    Pilih perangkat mic dari daftar
+                  </p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div id="mic-device-panel" class="hidden">
+            <label
+              class="block text-[10px] font-mono text-gray-400 uppercase mb-1"
+              for="mic-device-select"
+              >Perangkat Mikrofon</label
+            >
+            <select
+              id="mic-device-select"
+              class="w-full bg-gray-950 border border-gray-700 rounded px-2.5 py-1.5 text-purple-300 font-mono text-xs focus:outline-none focus:border-purple-500"
+            >
+              <option value="">Memuat perangkat...</option>
+            </select>
+          </div>
+
+          <div
+            id="mic-current-status"
+            class="text-[10px] font-mono text-gray-500 bg-gray-950 p-2 rounded border border-gray-800"
+          >
+            Aktif: Mikrofon Internal
+          </div>
+        </div>
+
+        <div class="flex space-x-2 mt-4">
+          <button
+            id="btn-refresh-mic-devices"
+            type="button"
+            class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs py-2 rounded-lg border border-gray-700"
+          >
+            <i class="fa-solid fa-rotate mr-1"></i> Refresh
+          </button>
+          <button
+            id="btn-save-mic"
+            type="button"
+            class="flex-1 bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs py-2 rounded-lg border border-purple-600"
+          >
+            <i class="fa-solid fa-check mr-1"></i> Terapkan
+          </button>
         </div>
       </div>
     </div>
@@ -792,6 +933,7 @@
       let connectedPeersInfo = new Set();
       let activeBroadcaster = null;
       const remoteAudioElements = new Map();
+      const notifiedJoinPeers = new Set();
 
       // Global Online Signaling State (MQTT)
       let mqttClient = null;
@@ -966,6 +1108,11 @@
       let keepAliveGain = null;
       let micPermissionStatus = null;
       const MIC_PERMISSION_KEY = "ht_mic_permission_granted";
+      const MIC_SOURCE_KEY = "ht_mic_source_mode";
+      const MIC_DEVICE_KEY = "ht_mic_device_id";
+      let micSourceMode = "internal";
+      let selectedMicDeviceId = "";
+      let speakerCaptureStream = null;
 
       // Network Monitor State
       let networkMonitorInterval = null;
@@ -1184,14 +1331,22 @@
       function showToast(message, type = "info") {
         const container = document.getElementById("toast-container");
         const toast = document.createElement("div");
-        toast.className = `px-4 py-2 rounded-xl text-xs font-mono font-bold shadow-2xl transition-all duration-300 transform translate-y-2 opacity-0 flex items-center space-x-2 border pointer-events-auto ${
-          type === "success"
-            ? "bg-emerald-950 border-emerald-700 text-emerald-300"
-            : type === "warning"
-              ? "bg-amber-950 border-amber-700 text-amber-300"
-              : "bg-gray-900 border-gray-700 text-gray-200"
-        }`;
-        toast.innerHTML = `<i class="fa-solid fa-circle-info"></i><span>${message}</span>`;
+        const styleMap = {
+          success: "bg-emerald-950 border-emerald-700 text-emerald-300",
+          warning: "bg-amber-950 border-amber-700 text-amber-300",
+          join: "bg-cyan-950 border-cyan-700 text-cyan-300",
+          leave: "bg-orange-950 border-orange-700 text-orange-300",
+          info: "bg-gray-900 border-gray-700 text-gray-200",
+        };
+        const iconMap = {
+          success: "fa-circle-check",
+          warning: "fa-triangle-exclamation",
+          join: "fa-user-plus",
+          leave: "fa-user-minus",
+          info: "fa-circle-info",
+        };
+        toast.className = `px-4 py-2 rounded-xl text-xs font-mono font-bold shadow-2xl transition-all duration-300 transform translate-y-2 opacity-0 flex items-center space-x-2 border pointer-events-auto ${styleMap[type] || styleMap.info}`;
+        toast.innerHTML = `<i class="fa-solid ${iconMap[type] || iconMap.info}"></i><span>${message}</span>`;
         container.appendChild(toast);
 
         setTimeout(
@@ -1202,6 +1357,80 @@
           toast.classList.add("opacity-0", "translate-y-2");
           setTimeout(() => toast.remove(), 300);
         }, 3500);
+      }
+
+      function getPeerDisplayName(peerId) {
+        if (peerNames.has(peerId)) return peerNames.get(peerId);
+        return peerId.substring(peerId.lastIndexOf("-") + 1);
+      }
+
+      async function requestNotificationPermission() {
+        if (!("Notification" in window)) return;
+        if (Notification.permission === "default") {
+          try {
+            await Notification.requestPermission();
+          } catch (e) {}
+        }
+      }
+
+      function showBrowserNotification(title, body) {
+        if (!("Notification" in window) || Notification.permission !== "granted") {
+          return;
+        }
+        try {
+          const notif = new Notification(title, {
+            body,
+            icon: "/icon-512.png",
+            badge: "/icon-512.png",
+            tag: "ptt-sibagus-member",
+            renotify: true,
+          });
+          setTimeout(() => notif.close(), 4000);
+        } catch (e) {}
+      }
+
+      function notifyMemberJoined(peerId) {
+        if (!peerId || peerId === myPeerId || notifiedJoinPeers.has(peerId)) {
+          return;
+        }
+        notifiedJoinPeers.add(peerId);
+        const name = getPeerDisplayName(peerId);
+        showToast(`${name} masuk saluran`, "join");
+        if (document.visibilityState !== "visible") {
+          showBrowserNotification(
+            "Anggota Masuk — PTT SIBAGUS",
+            `${name} bergabung ke ${roomName}`,
+          );
+        }
+        if (navigator.vibrate) navigator.vibrate(30);
+      }
+
+      function notifyMemberLeft(peerId) {
+        if (!peerId || peerId === myPeerId || !notifiedJoinPeers.has(peerId)) {
+          return;
+        }
+        const name = getPeerDisplayName(peerId);
+        notifiedJoinPeers.delete(peerId);
+        showToast(`${name} keluar saluran`, "leave");
+        if (document.visibilityState !== "visible") {
+          showBrowserNotification(
+            "Anggota Keluar — PTT SIBAGUS",
+            `${name} meninggalkan ${roomName}`,
+          );
+        }
+        if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+      }
+
+      function maybeAnnouncePeerJoin(peerId) {
+        if (
+          !peerId ||
+          peerId === myPeerId ||
+          notifiedJoinPeers.has(peerId) ||
+          !connectedPeersInfo.has(peerId)
+        ) {
+          return;
+        }
+        notifyMemberJoined(peerId);
       }
 
       // Initialize Web Audio Context safely on user interaction
@@ -1307,11 +1536,248 @@
           micStream = null;
           micTrack = null;
         }
+        if (speakerCaptureStream) {
+          speakerCaptureStream.getTracks().forEach((t) => t.stop());
+          speakerCaptureStream = null;
+        }
         if (micSourceNode) {
           try {
             micSourceNode.disconnect();
           } catch (e) {}
           micSourceNode = null;
+        }
+      }
+
+      function guessInternalMicDevice(devices) {
+        const inputs = devices.filter((d) => d.kind === "audioinput");
+        if (!inputs.length) return null;
+
+        const builtin = inputs.find((d) =>
+          /built-?in|internal|default|iphone|ipad|android|hp|phone|communications/i.test(
+            d.label,
+          ),
+        );
+        return builtin || inputs[0];
+      }
+
+      async function enumerateMicDevices() {
+        if (!navigator.mediaDevices?.enumerateDevices) return [];
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        return devices.filter((d) => d.kind === "audioinput");
+      }
+
+      async function captureSpeakerAudioStream() {
+        if (!navigator.mediaDevices?.getDisplayMedia) {
+          throw new Error("Browser tidak mendukung capture audio speaker");
+        }
+
+        const displayStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          },
+        });
+
+        displayStream.getVideoTracks().forEach((t) => {
+          t.stop();
+          displayStream.removeTrack(t);
+        });
+
+        const audioTracks = displayStream.getAudioTracks();
+        if (!audioTracks.length) {
+          displayStream.getTracks().forEach((t) => t.stop());
+          throw new Error(
+            "Tidak ada audio speaker. Centang 'Bagikan audio' saat diminta.",
+          );
+        }
+
+        if (speakerCaptureStream) {
+          speakerCaptureStream.getTracks().forEach((t) => t.stop());
+        }
+
+        speakerCaptureStream = new MediaStream(audioTracks);
+        return speakerCaptureStream;
+      }
+
+      async function acquireMicStreamByMode() {
+        if (micSourceMode === "speaker") {
+          return captureSpeakerAudioStream();
+        }
+
+        const audioConstraints = {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        };
+
+        if (micSourceMode === "device" && selectedMicDeviceId) {
+          audioConstraints.deviceId = { exact: selectedMicDeviceId };
+        } else if (micSourceMode === "internal") {
+          const devices = await enumerateMicDevices();
+          const internalMic = guessInternalMicDevice(devices);
+          if (internalMic?.deviceId) {
+            audioConstraints.deviceId = { exact: internalMic.deviceId };
+          }
+        }
+
+        return navigator.mediaDevices.getUserMedia({
+          audio: audioConstraints,
+          video: false,
+        });
+      }
+
+      function getMicSourceLabel() {
+        if (micSourceMode === "speaker") return "Audio dari Speaker";
+        if (micSourceMode === "device" && selectedMicDeviceId) {
+          const sel = document.getElementById("mic-device-select");
+          const opt = sel?.selectedOptions?.[0];
+          return opt?.textContent || "Mikrofon Manual";
+        }
+        return "Mikrofon Internal";
+      }
+
+      function updateMicStatusUI() {
+        const statusEl = document.getElementById("mic-current-status");
+        if (statusEl) {
+          const trackLabel = micTrack?.label ? ` (${micTrack.label})` : "";
+          statusEl.textContent = `Aktif: ${getMicSourceLabel()}${trackLabel}`;
+        }
+      }
+
+      async function replaceMicOnActiveCalls() {
+        const outTrack =
+          outgoingStream?.getAudioTracks()[0] || micTrack;
+        if (!outTrack) return;
+
+        for (const call of activeCalls.values()) {
+          const pc = call.peerConnection || call._pc;
+          if (!pc) continue;
+          const sender = pc
+            .getSenders()
+            .find((s) => s.track && s.track.kind === "audio");
+          if (sender) {
+            try {
+              await sender.replaceTrack(outTrack);
+            } catch (e) {
+              console.warn("Gagal ganti track audio:", e);
+            }
+          }
+        }
+      }
+
+      async function populateMicDeviceList() {
+        const select = document.getElementById("mic-device-select");
+        if (!select) return;
+
+        const devices = await enumerateMicDevices();
+        select.innerHTML = "";
+
+        if (!devices.length) {
+          select.innerHTML =
+            '<option value="">Tidak ada mic terdeteksi — izinkan dulu</option>';
+          return;
+        }
+
+        devices.forEach((device, idx) => {
+          const opt = document.createElement("option");
+          opt.value = device.deviceId;
+          opt.textContent =
+            device.label || `Mikrofon ${idx + 1}`;
+          if (device.deviceId === selectedMicDeviceId) opt.selected = true;
+          select.appendChild(opt);
+        });
+      }
+
+      function syncMicModalUI() {
+        const modeInput = document.querySelector(
+          `input[name="mic-source-mode"][value="${micSourceMode}"]`,
+        );
+        if (modeInput) modeInput.checked = true;
+
+        const devicePanel = document.getElementById("mic-device-panel");
+        if (devicePanel) {
+          devicePanel.classList.toggle("hidden", micSourceMode !== "device");
+        }
+
+        updateMicStatusUI();
+      }
+
+      async function openMicSettingsModal() {
+        await requestNotificationPermission();
+        if (!isMicStreamActive()) {
+          await setupMicrophone(true);
+        }
+        await populateMicDeviceList();
+        syncMicModalUI();
+        document.getElementById("modal-mic").classList.remove("hidden");
+      }
+
+      async function saveMicSettings() {
+        const selectedMode = document.querySelector(
+          'input[name="mic-source-mode"]:checked',
+        )?.value;
+        const deviceSelect = document.getElementById("mic-device-select");
+
+        if (!selectedMode) return;
+
+        micSourceMode = selectedMode;
+        selectedMicDeviceId =
+          selectedMode === "device" ? deviceSelect?.value || "" : "";
+
+        localStorage.setItem(MIC_SOURCE_KEY, micSourceMode);
+        localStorage.setItem(MIC_DEVICE_KEY, selectedMicDeviceId);
+
+        const wasTransmitting = isTransmitting;
+        if (wasTransmitting) stopTransmitting();
+
+        const ok = await setupMicrophone(true);
+        if (!ok) {
+          showToast("Gagal menerapkan pengaturan mikrofon.", "warning");
+          return;
+        }
+
+        await replaceMicOnActiveCalls();
+        updateMicStatusUI();
+        document.getElementById("modal-mic").classList.add("hidden");
+        showToast(`Mic: ${getMicSourceLabel()}`, "success");
+      }
+
+      function setupMicSettingsListeners() {
+        document.getElementById("btn-open-mic")?.addEventListener("click", () => {
+          openMicSettingsModal();
+        });
+        document.getElementById("btn-close-mic")?.addEventListener("click", () => {
+          document.getElementById("modal-mic").classList.add("hidden");
+        });
+        document
+          .getElementById("btn-refresh-mic-devices")
+          ?.addEventListener("click", async () => {
+            await setupMicrophone(true);
+            await populateMicDeviceList();
+            showToast("Daftar mikrofon diperbarui.", "info");
+          });
+        document
+          .getElementById("btn-save-mic")
+          ?.addEventListener("click", saveMicSettings);
+
+        document.querySelectorAll('input[name="mic-source-mode"]').forEach((radio) => {
+          radio.addEventListener("change", (e) => {
+            const devicePanel = document.getElementById("mic-device-panel");
+            if (devicePanel) {
+              devicePanel.classList.toggle(
+                "hidden",
+                e.target.value !== "device",
+              );
+            }
+          });
+        });
+
+        if (navigator.mediaDevices) {
+          navigator.mediaDevices.addEventListener("devicechange", () => {
+            populateMicDeviceList();
+          });
         }
       }
 
@@ -1339,14 +1805,7 @@
             releaseMicrophone();
           }
 
-          micStream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-            },
-            video: false,
-          });
+          micStream = await acquireMicStreamByMode();
 
           micTrack = micStream.getAudioTracks()[0];
           micTrack.enabled = true;
@@ -1362,11 +1821,19 @@
           setupOutgoingAudioGraph(micStream);
           setupVisualizerSource(micStream);
           setupVoxAnalyser(micStream);
+          updateMicStatusUI();
           return true;
         } catch (err) {
           console.error("Gagal mengakses mikrofon:", err);
           localStorage.removeItem(MIC_PERMISSION_KEY);
           micWarning.classList.remove("hidden");
+          if (micSourceMode === "speaker") {
+            showToast(
+              err.message ||
+                "Gagal capture speaker. Pilih layar/tab dan centang bagikan audio.",
+              "warning",
+            );
+          }
           return false;
         }
       }
@@ -1477,6 +1944,7 @@
         dataConnections.clear();
         connectedPeersInfo.clear();
         peerNames.clear();
+        notifiedJoinPeers.clear();
         activeBroadcaster = null;
 
         remoteAudioElements.forEach((el) => {
@@ -1554,6 +2022,7 @@
         startBackgroundKeepAlive();
         startNetworkMonitor();
         appStarted = true;
+        requestNotificationPermission();
         showToast("HT dinyalakan — siap komunikasi!", "success");
       }
 
@@ -1794,6 +2263,8 @@
           peer.destroy();
         }
 
+        notifiedJoinPeers.clear();
+
         const defaultIceServers = [
           { urls: "stun:stun.l.google.com:19302" },
           { urls: "stun:stun1.l.google.com:19302" },
@@ -1869,12 +2340,14 @@
               peerNames.set(conn.peer, data.displayName);
             }
             conn.send({ type: "HELLO_ACK", peerId: myPeerId, displayName: myDisplayName });
+            maybeAnnouncePeerJoin(conn.peer);
             updatePeersListUI();
           } else if (data.type === "HELLO_ACK") {
             if (data.displayName) {
               peerNames.set(conn.peer, data.displayName);
-              updatePeersListUI();
             }
+            maybeAnnouncePeerJoin(conn.peer);
+            updatePeersListUI();
           } else if (data.type === "UPDATE_NAME") {
             if (data.displayName) {
               peerNames.set(conn.peer, data.displayName);
@@ -1884,9 +2357,11 @@
         });
 
         conn.on("close", () => {
-          dataConnections.delete(conn.peer);
-          connectedPeersInfo.delete(conn.peer);
-          peerNames.delete(conn.peer);
+          const leftPeerId = conn.peer;
+          notifyMemberLeft(leftPeerId);
+          dataConnections.delete(leftPeerId);
+          connectedPeersInfo.delete(leftPeerId);
+          peerNames.delete(leftPeerId);
           updatePeersListUI();
         });
       }
@@ -2000,6 +2475,7 @@
                   sendMqttPresence("RESPONSE");
                 }
               } else if (payload.type === "LEAVE") {
+                notifyMemberLeft(payload.peerId);
                 if (dataConnections.has(payload.peerId)) {
                   dataConnections.get(payload.peerId).close();
                 }
@@ -2429,6 +2905,7 @@
 
         // PWA Install
         setupPwaInstall();
+        setupMicSettingsListeners();
 
         // Username Modal Listeners
         document.getElementById("btn-save-username").addEventListener("click", handleSaveUsername);
@@ -2551,6 +3028,7 @@
         await requestWakeLock();
         startBackgroundKeepAlive();
         startNetworkMonitor();
+        requestNotificationPermission();
       }
 
       function showUsernameModal() {
@@ -2640,6 +3118,10 @@
         }
 
         updateShareMeta();
+
+        micSourceMode = localStorage.getItem(MIC_SOURCE_KEY) || "internal";
+        selectedMicDeviceId = localStorage.getItem(MIC_DEVICE_KEY) || "";
+
         setupEventListeners();
         registerPwaServiceWorker();
         setupVisibilityHandlers();
