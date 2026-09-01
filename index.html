@@ -636,6 +636,12 @@
             >READY</span
           >
           <button
+            id="btn-refresh-channel"
+            class="w-7 h-7 rounded-full bg-amber-900/50 hover:bg-amber-700 border border-amber-700 text-amber-300 hover:text-white flex items-center justify-center transition-colors"
+            title="Refresh saluran">
+            <i class="fa-solid fa-rotate-right text-[11px]"></i>
+          </button>
+          <button
             id="btn-minimize"
             class="w-7 h-7 rounded-full bg-sky-900/50 hover:bg-sky-700 border border-sky-700 text-sky-300 hover:text-white flex items-center justify-center transition-colors"
             title="Mode mengambang">
@@ -977,14 +983,18 @@
             </button>
           </div>
           <div class="flex flex-col items-center">
-            <span id="ptt-label-b" class="ptt-slot-label text-sky-300">PTT B · CH 02</span>
+            <span id="ptt-label-b" class="ptt-slot-label text-sky-300"
+              >PTT B · CH 02</span
+            >
             <button
               id="ptt-button-b"
               type="button"
               data-slot="B"
               class="ptt-slot-btn ptt-idle border-4 border-sky-500 bg-sky-950/50 flex flex-col items-center justify-center text-sky-100 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer">
               <i class="fa-solid fa-microphone text-2xl mb-1 text-sky-300"></i>
-              <span class="font-extrabold text-xs tracking-wide text-sky-200">PTT B</span>
+              <span class="font-extrabold text-xs tracking-wide text-sky-200"
+                >PTT B</span
+              >
               <span
                 id="ptt-subtext-b"
                 class="text-[9px] text-gray-400 font-mono mt-0.5 text-center px-1"
@@ -1018,11 +1028,18 @@
             class="text-[11px] font-bold text-gray-400 uppercase tracking-wider"
             >Anggota Saluran</span
           >
-          <button
-            id="btn-share"
-            class="text-[10px] bg-gray-800 hover:bg-gray-700 text-amber-400 px-2 py-0.5 rounded border border-gray-700">
-            <i class="fa-solid fa-share-nodes mr-1"></i>Bagikan Room
-          </button>
+          <div class="flex items-center space-x-1">
+            <button
+              id="btn-refresh-channel-footer"
+              class="text-[10px] bg-gray-800 hover:bg-gray-700 text-sky-300 px-2 py-0.5 rounded border border-gray-700">
+              <i class="fa-solid fa-rotate-right mr-1"></i>Refresh
+            </button>
+            <button
+              id="btn-share"
+              class="text-[10px] bg-gray-800 hover:bg-gray-700 text-amber-400 px-2 py-0.5 rounded border border-gray-700">
+              <i class="fa-solid fa-share-nodes mr-1"></i>Bagikan Room
+            </button>
+          </div>
         </div>
         <div
           id="peers-list"
@@ -1645,6 +1662,9 @@
       let dataConnections = new Map();
       let activeCalls = new Map();
       let connectedPeersInfo = new Set();
+      let connectingPeers = new Set();
+      let talkDetectors = new Map();
+      let connectRetryTimers = new Map();
       let activeBroadcaster = null;
       const remoteAudioElements = new Map();
       const notifiedJoinPeers = new Set();
@@ -1665,8 +1685,20 @@
       let analyserNode = null;
       let visualizerMediaSource = null;
       const visualizerBySlot = {
-        A: { source: null, analyser: null, canvas: null, ctx: null, idleEl: null },
-        B: { source: null, analyser: null, canvas: null, ctx: null, idleEl: null },
+        A: {
+          source: null,
+          analyser: null,
+          canvas: null,
+          ctx: null,
+          idleEl: null,
+        },
+        B: {
+          source: null,
+          analyser: null,
+          canvas: null,
+          ctx: null,
+          idleEl: null,
+        },
       };
       let voxAnalyserNode = null;
       let voxMediaSource = null;
@@ -1699,6 +1731,7 @@
       let voxHangTimeTimer = null;
       let voxAutoTriggered = false;
       let rxHangTimeTimer = null;
+      let txStartedAt = 0;
 
       // Dual saluran — slot B terpisah; slot A = proxy ke variabel global
       let dualChannelEnabled = false;
@@ -1727,6 +1760,9 @@
         dataConnections: new Map(),
         activeCalls: new Map(),
         connectedPeersInfo: new Set(),
+        connectingPeers: new Set(),
+        talkDetectors: new Map(),
+        connectRetryTimers: new Map(),
         peerNames: new Map(),
         peerPresence: new Map(),
         notifiedJoinPeers: new Set(),
@@ -1738,6 +1774,7 @@
         channelBroadcast: null,
         mqttClient: null,
         heartbeatInterval: null,
+        txStartedAt: 0,
       };
 
       const slotAProxy = {
@@ -1771,6 +1808,15 @@
         },
         get activeCalls() {
           return activeCalls;
+        },
+        get connectingPeers() {
+          return connectingPeers;
+        },
+        get talkDetectors() {
+          return talkDetectors;
+        },
+        get connectRetryTimers() {
+          return connectRetryTimers;
         },
         get connectedPeersInfo() {
           return connectedPeersInfo;
@@ -1828,6 +1874,12 @@
         },
         set heartbeatInterval(v) {
           heartbeatInterval = v;
+        },
+        get txStartedAt() {
+          return txStartedAt;
+        },
+        set txStartedAt(v) {
+          txStartedAt = v;
         },
       };
 
@@ -2098,6 +2150,22 @@
         return getActiveSlotIds().some((id) => isRemoteRxActive(id));
       }
 
+      function hasRemoteTalkActivity(slotId) {
+        const slot = getSlot(slotId);
+        if (!slot.talkDetectors) return null;
+        for (const [peerId, det] of slot.talkDetectors) {
+          if (det?.analyser && getAnalyserActivity(det.analyser, 10)) {
+            return peerId;
+          }
+        }
+        return null;
+      }
+
+      function isChannelBusy(slotId) {
+        if (isRemoteRxActive(slotId)) return true;
+        return !!hasRemoteTalkActivity(slotId);
+      }
+
       function isMobileDevice() {
         if (window.matchMedia("(pointer: coarse)").matches) return true;
         return /android|iphone|ipad|ipod|mobile|windows phone/i.test(
@@ -2304,9 +2372,11 @@
       function bindVisualizerDom() {
         if (dualChannelEnabled) {
           visualizerBySlot.A.canvas = document.getElementById("visualizer-a");
-          visualizerBySlot.A.idleEl = document.getElementById("no-audio-text-a");
+          visualizerBySlot.A.idleEl =
+            document.getElementById("no-audio-text-a");
           visualizerBySlot.B.canvas = document.getElementById("visualizer-b");
-          visualizerBySlot.B.idleEl = document.getElementById("no-audio-text-b");
+          visualizerBySlot.B.idleEl =
+            document.getElementById("no-audio-text-b");
         } else {
           visualizerBySlot.A.canvas = document.getElementById("visualizer");
           visualizerBySlot.A.idleEl = document.getElementById("no-audio-text");
@@ -3039,6 +3109,12 @@
         }
 
         stopRemoteAudio(peerId, slotId);
+        clearTalkDetector(peerId, slotId);
+        slot.connectingPeers.delete(peerId);
+        if (slot.connectRetryTimers.has(peerId)) {
+          clearTimeout(slot.connectRetryTimers.get(peerId));
+          slot.connectRetryTimers.delete(peerId);
+        }
         slot.connectedPeersInfo.delete(peerId);
         slot.peerNames.delete(peerId);
         slot.peerPresence.delete(peerId);
@@ -3708,6 +3784,14 @@
         });
         slot.remoteAudioElements.clear();
 
+        Array.from(slot.talkDetectors.keys()).forEach((peerId) =>
+          clearTalkDetector(peerId, slotId),
+        );
+        slot.talkDetectors.clear();
+        slot.connectingPeers.clear();
+        slot.connectRetryTimers.forEach((timer) => clearTimeout(timer));
+        slot.connectRetryTimers.clear();
+
         if (slot.heartbeatInterval) {
           clearInterval(slot.heartbeatInterval);
           slot.heartbeatInterval = null;
@@ -3747,6 +3831,48 @@
           leaveChannelSlot(slotId, { sendLeave }),
         );
         stopPresenceMonitor();
+        stopTalkDetectLoop();
+      }
+
+      let channelRefreshBusy = false;
+      async function refreshChannelConnection() {
+        if (channelRefreshBusy || appPoweredOff) return;
+        channelRefreshBusy = true;
+        const buttons = [
+          document.getElementById("btn-refresh-channel"),
+          document.getElementById("btn-refresh-channel-footer"),
+        ];
+        buttons.forEach((btn) => {
+          if (btn) btn.disabled = true;
+        });
+        showToast("Menyegarkan saluran...", "info");
+        try {
+          pttHeld.A = false;
+          pttHeld.B = false;
+          getActiveSlotIds().forEach((slotId) => {
+            if (getSlot(slotId).isTransmitting) {
+              stopTransmitting(false, { force: true }, slotId);
+            }
+          });
+          const roomA = roomName;
+          const roomB = slotB.roomName;
+          const dual = dualChannelEnabled;
+          await switchToRoomForSlot("A", roomA, { updateChannelUi: true });
+          if (dual) {
+            await switchToRoomForSlot("B", roomB);
+          }
+          await ensureAudioPipelineReady();
+          startTalkDetectLoop();
+          showToast("Saluran disegarkan.", "success");
+        } catch (e) {
+          console.warn("Refresh saluran gagal:", e);
+          showToast("Gagal refresh saluran. Coba lagi.", "warning");
+        } finally {
+          channelRefreshBusy = false;
+          buttons.forEach((btn) => {
+            if (btn) btn.disabled = false;
+          });
+        }
       }
 
       async function ensureAudioPipelineReady() {
@@ -4259,7 +4385,8 @@
 
         const slot = getSlot(slotId);
         const width = (vis.canvas.width = vis.canvas.parentElement.clientWidth);
-        const height = (vis.canvas.height = vis.canvas.parentElement.clientHeight);
+        const height = (vis.canvas.height =
+          vis.canvas.parentElement.clientHeight);
         const slotTx = !!slot.isTransmitting;
         const slotRx = !!(slot.isReceiving && slot.activeBroadcaster);
         const idleEl = vis.idleEl;
@@ -4284,7 +4411,8 @@
           bufferLength = Math.min(32, voxAnalyserNode.frequencyBinCount);
           dataArray = new Uint8Array(voxAnalyserNode.frequencyBinCount);
           voxAnalyserNode.getByteFrequencyData(dataArray);
-          showWave = getAnalyserActivity(voxAnalyserNode, 4) || slotTx || !slotRx;
+          showWave =
+            getAnalyserActivity(voxAnalyserNode, 4) || slotTx || !slotRx;
         } else if (slotRx) {
           showWave = true;
         }
@@ -4300,11 +4428,12 @@
 
         vis.ctx.clearRect(0, 0, width, height);
         if (!dataArray) {
-          vis.ctx.fillStyle = slotId === "B"
-            ? "rgb(14, 140, 200)"
-            : slotRx
-              ? "rgb(16, 180, 120)"
-              : "rgb(16, 140, 100)";
+          vis.ctx.fillStyle =
+            slotId === "B"
+              ? "rgb(14, 140, 200)"
+              : slotRx
+                ? "rgb(16, 180, 120)"
+                : "rgb(16, 140, 100)";
           vis.ctx.fillRect(0, height * 0.35, width, height * 0.3);
           return;
         }
@@ -4337,6 +4466,172 @@
 
         if (!visualizerBySlot.A.ctx && !canvasCtx) return;
         drawVisualizerSlot("A");
+      }
+
+      function shouldInitiateMedia(myId, theirId) {
+        return String(myId || "") < String(theirId || "");
+      }
+
+      function isMediaCallLive(peerId, slotId = "A") {
+        const call = getSlot(slotId).activeCalls.get(peerId);
+        if (!call) return false;
+        if (call.open) return true;
+        const pc = call.peerConnection || call._pc;
+        const ice = pc?.iceConnectionState;
+        const conn = pc?.connectionState;
+        return (
+          ice === "connected" ||
+          ice === "completed" ||
+          ice === "checking" ||
+          conn === "connected" ||
+          conn === "connecting"
+        );
+      }
+
+      function sendTxStateToConn(conn, slotId) {
+        const slot = getSlot(slotId);
+        if (!conn?.open || !slot.isTransmitting) return;
+        try {
+          conn.send({
+            type: "PTT_START",
+            userName: slot.myPeerId,
+            room: slot.roomName,
+            slot: slotId,
+            txStartedAt: slot.txStartedAt || Date.now(),
+          });
+        } catch (e) {}
+      }
+
+      function clearTalkDetector(peerId, slotId = "A") {
+        const slot = getSlot(slotId);
+        const det = slot.talkDetectors.get(peerId);
+        if (!det) return;
+        try {
+          det.src?.disconnect();
+        } catch (e) {}
+        try {
+          det.analyser?.disconnect();
+        } catch (e) {}
+        slot.talkDetectors.delete(peerId);
+      }
+
+      function attachRemoteTalkDetector(stream, peerId, slotId = "A") {
+        if (!audioCtx || !stream || !peerId) return;
+        const slot = getSlot(slotId);
+        clearTalkDetector(peerId, slotId);
+        try {
+          const src = audioCtx.createMediaStreamSource(stream);
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 64;
+          analyser.smoothingTimeConstant = 0.5;
+          src.connect(analyser);
+          slot.talkDetectors.set(peerId, { src, analyser });
+          startTalkDetectLoop();
+        } catch (e) {}
+      }
+
+      let talkDetectTimer = null;
+      function startTalkDetectLoop() {
+        if (talkDetectTimer) return;
+        talkDetectTimer = setInterval(() => {
+          if (appPoweredOff) return;
+          getActiveSlotIds().forEach((slotId) => {
+            const slot = getSlot(slotId);
+            if (slot.isTransmitting) return;
+            const talker = hasRemoteTalkActivity(slotId);
+            if (
+              talker &&
+              (!slot.isReceiving || slot.activeBroadcaster !== talker)
+            ) {
+              handlePeerStartedTalking(talker, null, slotId);
+            }
+          });
+        }, 180);
+      }
+
+      function stopTalkDetectLoop() {
+        if (talkDetectTimer) {
+          clearInterval(talkDetectTimer);
+          talkDetectTimer = null;
+        }
+      }
+
+      function attachCallHandlers(call, slotId, peerId) {
+        const slot = getSlot(slotId);
+        call.on("stream", (remoteStream) => {
+          playRemoteAudio(remoteStream, peerId, slotId);
+        });
+        call.on("close", () => {
+          if (slot.activeCalls.get(peerId) !== call) return;
+          slot.activeCalls.delete(peerId);
+          stopRemoteAudio(peerId, slotId);
+        });
+        call.on("error", () => {
+          if (slot.activeCalls.get(peerId) !== call) return;
+          slot.activeCalls.delete(peerId);
+        });
+        slot.activeCalls.set(peerId, call);
+      }
+
+      function acceptIncomingCall(call, slotId) {
+        const slot = getSlot(slotId);
+        const peerId = call.peer;
+        const existing = slot.activeCalls.get(peerId);
+        if (existing && existing !== call && isMediaCallLive(peerId, slotId)) {
+          try {
+            call.close();
+          } catch (e) {}
+          return;
+        }
+        if (existing && existing !== call) {
+          try {
+            existing.close();
+          } catch (e) {}
+        }
+        const answerStream = getOutgoingStreamForSlot(slotId);
+        call.answer(answerStream);
+        attachCallHandlers(call, slotId, peerId);
+      }
+
+      function openPeerLinks(
+        targetPeerId,
+        slotId,
+        { forceMedia = false } = {},
+      ) {
+        const slot = getSlot(slotId);
+        if (!slot.peer || !slot.peer.open) return;
+
+        if (
+          !isPeerConnectionOpen(targetPeerId, slotId) &&
+          !slot.dataConnections.has(targetPeerId)
+        ) {
+          const conn = slot.peer.connect(targetPeerId);
+          conn.on("open", () => {
+            slot.connectingPeers.delete(targetPeerId);
+            setupDataConnection(conn, slotId);
+            conn.send({
+              type: "HELLO",
+              peerId: slot.myPeerId,
+              displayName: myDisplayName,
+              transmitting: slot.isTransmitting,
+              txStartedAt: slot.txStartedAt || 0,
+              room: slot.roomName,
+            });
+            sendTxStateToConn(conn, slotId);
+          });
+          conn.on("error", () => {
+            slot.connectingPeers.delete(targetPeerId);
+          });
+        }
+
+        const weInitiate =
+          forceMedia || shouldInitiateMedia(slot.myPeerId, targetPeerId);
+        if (weInitiate && !isMediaCallLive(targetPeerId, slotId)) {
+          const streamToSend = getOutgoingStreamForSlot(slotId);
+          if (!streamToSend) return;
+          const call = slot.peer.call(targetPeerId, streamToSend);
+          attachCallHandlers(call, slotId, targetPeerId);
+        }
       }
 
       // --- PeerJS Multi-User Signaling & Mesh Network ---
@@ -4395,19 +4690,8 @@
             } catch (e) {}
             return;
           }
-          const answerStream = getOutgoingStreamForSlot(slotId);
-          call.answer(answerStream);
-
-          call.on("stream", (remoteStream) => {
-            playRemoteAudio(remoteStream, call.peer, slotId);
-          });
-
-          call.on("close", () => {
-            stopRemoteAudio(call.peer, slotId);
-            slot.activeCalls.delete(call.peer);
-          });
-
-          slot.activeCalls.set(call.peer, call);
+          slot.connectingPeers.delete(call.peer);
+          acceptIncomingCall(call, slotId);
         });
 
         slot.peer.on("connection", (conn) => {
@@ -4425,10 +4709,17 @@
       function setupDataConnection(conn, slotId = "A") {
         const slot = getSlot(slotId);
         slot.dataConnections.set(conn.peer, conn);
+        slot.connectingPeers.delete(conn.peer);
         touchPeerPresence(conn.peer, { dataOpen: false }, slotId);
+
+        if (conn.open) {
+          touchPeerPresence(conn.peer, { dataOpen: true }, slotId);
+          sendTxStateToConn(conn, slotId);
+        }
 
         conn.on("open", () => {
           touchPeerPresence(conn.peer, { dataOpen: true }, slotId);
+          sendTxStateToConn(conn, slotId);
         });
 
         conn.on("data", (data) => {
@@ -4437,18 +4728,40 @@
           if (data.room && data.room !== slot.roomName) return;
 
           if (data.type === "PTT_START") {
-            handlePeerStartedTalking(conn.peer, data.userName, slotId);
+            handlePeerStartedTalking(conn.peer, data.userName, slotId, data);
           } else if (data.type === "PTT_STOP") {
             handlePeerStoppedTalking(conn.peer, slotId);
+          } else if (data.type === "CHANNEL_BUSY") {
+            handleChannelBusyMessage(conn, data, slotId);
           } else if (data.type === "HELLO") {
             markPeerActive(conn.peer, data.displayName || null, slotId);
             conn.send({
               type: "HELLO_ACK",
               peerId: slot.myPeerId,
               displayName: myDisplayName,
+              transmitting: slot.isTransmitting,
+              txStartedAt: slot.txStartedAt || 0,
+              room: slot.roomName,
             });
+            sendTxStateToConn(conn, slotId);
+            if (data.transmitting) {
+              handlePeerStartedTalking(
+                conn.peer,
+                data.displayName,
+                slotId,
+                data,
+              );
+            }
           } else if (data.type === "HELLO_ACK") {
             markPeerActive(conn.peer, data.displayName || null, slotId);
+            if (data.transmitting) {
+              handlePeerStartedTalking(
+                conn.peer,
+                data.displayName,
+                slotId,
+                data,
+              );
+            }
           } else if (data.type === "UPDATE_NAME") {
             if (data.displayName) {
               touchPeerPresence(
@@ -4477,36 +4790,43 @@
         const slot = getSlot(slotId);
         if (!targetPeerId || isOwnPeerId(targetPeerId)) return;
         if (!peerBelongsToSlotRoom(targetPeerId, slotId)) return;
-
-        if (slot.dataConnections.has(targetPeerId)) {
-          if (isPeerConnectionOpen(targetPeerId, slotId)) return;
-          removePeerFromChannel(targetPeerId, { notify: false, slotId });
-        }
-
         if (!slot.peer || !slot.peer.open) return;
 
-        const conn = slot.peer.connect(targetPeerId);
-        conn.on("open", () => {
-          setupDataConnection(conn, slotId);
-          conn.send({
-            type: "HELLO",
-            peerId: slot.myPeerId,
-            displayName: myDisplayName,
-          });
-        });
-
-        const streamToSend = getOutgoingStreamForSlot(slotId);
-        if (streamToSend) {
-          const call = slot.peer.call(targetPeerId, streamToSend);
-          call.on("stream", (remoteStream) => {
-            playRemoteAudio(remoteStream, targetPeerId, slotId);
-          });
-          call.on("close", () => {
-            stopRemoteAudio(targetPeerId, slotId);
-            slot.activeCalls.delete(targetPeerId);
-          });
-          slot.activeCalls.set(targetPeerId, call);
+        if (
+          isPeerConnectionOpen(targetPeerId, slotId) &&
+          isMediaCallLive(targetPeerId, slotId)
+        ) {
+          if (slot.isTransmitting) {
+            const conn = slot.dataConnections.get(targetPeerId);
+            sendTxStateToConn(conn, slotId);
+          }
+          return;
         }
+
+        if (slot.connectingPeers.has(targetPeerId)) return;
+        slot.connectingPeers.add(targetPeerId);
+
+        const weInitiate = shouldInitiateMedia(slot.myPeerId, targetPeerId);
+        if (weInitiate) {
+          openPeerLinks(targetPeerId, slotId);
+          setTimeout(() => slot.connectingPeers.delete(targetPeerId), 2500);
+          return;
+        }
+
+        if (slot.connectRetryTimers.has(targetPeerId)) return;
+        const timer = setTimeout(() => {
+          slot.connectRetryTimers.delete(targetPeerId);
+          slot.connectingPeers.delete(targetPeerId);
+          if (!slot.peer?.open) return;
+          if (
+            isPeerConnectionOpen(targetPeerId, slotId) &&
+            isMediaCallLive(targetPeerId, slotId)
+          ) {
+            return;
+          }
+          openPeerLinks(targetPeerId, slotId, { forceMedia: true });
+        }, 1800);
+        slot.connectRetryTimers.set(targetPeerId, timer);
       }
 
       function discoverChannelPeers(slotId = "A") {
@@ -4676,6 +4996,7 @@
         }
         audioEl.srcObject = stream;
         audioEl.play().catch(() => {});
+        attachRemoteTalkDetector(stream, peerId, slotId);
         if (slot.isReceiving && slot.activeBroadcaster === peerId) {
           setupVisualizerSource(stream, slotId);
         }
@@ -4692,7 +5013,37 @@
         }
       }
 
-      function handlePeerStartedTalking(peerId, userName, slotId = "A") {
+      function handleChannelBusyMessage(conn, data, slotId) {
+        const slot = getSlot(slotId);
+        const theirStart = Number(data?.txStartedAt) || 0;
+        const ourStart = slot.txStartedAt || 0;
+        if (
+          slot.isTransmitting &&
+          ourStart &&
+          theirStart &&
+          ourStart <= theirStart
+        ) {
+          sendTxStateToConn(conn, slotId);
+          return;
+        }
+        if (slot.isTransmitting) {
+          pttHeld[slotId] = false;
+          stopTransmitting(false, { force: true }, slotId);
+        }
+        handlePeerStartedTalking(
+          data.broadcaster || conn.peer,
+          data.userName,
+          slotId,
+          data,
+        );
+      }
+
+      function handlePeerStartedTalking(
+        peerId,
+        userName,
+        slotId = "A",
+        extra = {},
+      ) {
         const slot = getSlot(slotId);
         if (slot.rxHangTimeTimer) {
           clearTimeout(slot.rxHangTimeTimer);
@@ -4702,6 +5053,32 @@
           clearTimeout(voxHangTimeTimer);
           voxHangTimeTimer = null;
         }
+
+        if (slot.isTransmitting && !voxAutoTriggered) {
+          const theirStart = Number(extra.txStartedAt) || Date.now();
+          const ourStart = slot.txStartedAt || 0;
+          if (ourStart && ourStart > theirStart) {
+            pttHeld[slotId] = false;
+            stopTransmitting(false, { force: true }, slotId);
+          } else {
+            const conn = slot.dataConnections.get(peerId);
+            if (conn?.open) {
+              try {
+                conn.send({
+                  type: "CHANNEL_BUSY",
+                  room: slot.roomName,
+                  slot: slotId,
+                  broadcaster: slot.myPeerId,
+                  userName: slot.myPeerId,
+                  txStartedAt: ourStart || Date.now(),
+                });
+                sendTxStateToConn(conn, slotId);
+              } catch (e) {}
+            }
+            return;
+          }
+        }
+
         if (
           slotId === "A" &&
           isTransmitting &&
@@ -4717,7 +5094,6 @@
         slot.isReceiving = true;
         slot.activeBroadcaster = peerId;
         playSquelchNoise(0.1);
-        const displayName = getPeerDisplayName(peerId, slotId);
         updateCombinedStatus();
         updatePeersListUI();
         const remoteStream = slot.remoteAudioElements.get(peerId)?.srcObject;
@@ -4744,7 +5120,15 @@
         const slot = getSlot(slotId);
         if (slot.isTransmitting) return;
         if (isAnySlotTransmitting()) return;
-        if (isRemoteRxActive(slotId)) return;
+
+        const talker = hasRemoteTalkActivity(slotId);
+        if (talker) {
+          handlePeerStartedTalking(talker, null, slotId);
+        }
+        if (isChannelBusy(slotId)) {
+          pttHeld[slotId] = false;
+          return;
+        }
         initAudioContext();
 
         if (!isMicStreamActive()) {
@@ -4765,11 +5149,13 @@
       } = {}) {
         const slot = getSlot(slotId);
         if (slot.isTransmitting) return;
+        if (!speakerRelay && isChannelBusy(slotId)) return;
         if (!speakerRelay && !voxAutoTriggered && !pttHeld[slotId]) {
           return;
         }
 
         slot.isTransmitting = true;
+        slot.txStartedAt = Date.now();
         activeTxSlot = slotId;
         if (speakerRelay || (slotId === "A" && isSpeakerRelayMode())) {
           speakerRelayActive = true;
@@ -4786,6 +5172,7 @@
             userName: slot.myPeerId,
             room: slot.roomName,
             slot: slotId,
+            txStartedAt: slot.txStartedAt,
           },
           slotId,
         );
@@ -4816,6 +5203,7 @@
         }
 
         slot.isTransmitting = false;
+        slot.txStartedAt = 0;
         if (activeTxSlot === slotId) activeTxSlot = null;
         setTransmissionGain(false, slotId);
 
@@ -5824,6 +6212,14 @@
             showToast(`Kode Room: ${roomName}`, "info");
           }
         });
+
+        const refreshHandler = () => refreshChannelConnection();
+        document
+          .getElementById("btn-refresh-channel")
+          ?.addEventListener("click", refreshHandler);
+        document
+          .getElementById("btn-refresh-channel-footer")
+          ?.addEventListener("click", refreshHandler);
 
         // PWA Install
         setupPwaInstall();
