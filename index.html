@@ -4,23 +4,20 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=no"
-    />
+      content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>PTT SIBAGUS — Push-to-Talk Realtime</title>
 
     <!-- PWA Primary Meta Tags -->
     <meta name="theme-color" content="#030712" />
     <meta
       name="description"
-      content="PTT SIBAGUS — Aplikasi Push-to-Talk realtime untuk komunikasi walkie-talkie online multi-saluran PMR berbasis WebRTC PWA."
-    />
+      content="PTT SIBAGUS — Aplikasi Push-to-Talk realtime untuk komunikasi walkie-talkie online multi-saluran PMR berbasis WebRTC PWA." />
     <meta name="application-name" content="PTT SIBAGUS" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
+      content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="PTT SIBAGUS" />
     <link rel="canonical" href="https://ptt.sibag.us/" />
     <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png" />
@@ -35,8 +32,7 @@
     <meta
       property="og:description"
       id="meta-og-description"
-      content="PTT SIBAGUS — Aplikasi Push-to-Talk realtime untuk komunikasi walkie-talkie online multi-saluran PMR berbasis WebRTC PWA."
-    />
+      content="PTT SIBAGUS — Aplikasi Push-to-Talk realtime untuk komunikasi walkie-talkie online multi-saluran PMR berbasis WebRTC PWA." />
     <meta property="og:image" content="https://ptt.sibag.us/icon-512.png" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
@@ -49,8 +45,7 @@
     <meta
       name="twitter:description"
       id="meta-twitter-description"
-      content="PTT SIBAGUS — Aplikasi Push-to-Talk realtime untuk komunikasi walkie-talkie online multi-saluran PMR berbasis WebRTC PWA."
-    />
+      content="PTT SIBAGUS — Aplikasi Push-to-Talk realtime untuk komunikasi walkie-talkie online multi-saluran PMR berbasis WebRTC PWA." />
     <meta name="twitter:image" content="https://ptt.sibag.us/icon-512.png" />
     <meta name="twitter:image:alt" content="Logo PTT SIBAGUS" />
 
@@ -66,8 +61,7 @@
     <!-- FontAwesome Icons -->
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <style>
       /* Prevent selection and default touch actions for mobile PTT button */
@@ -114,7 +108,9 @@
           inset -2px -2px 5px #4b5563;
       }
 
-      #ptt-button {
+      #ptt-button,
+      .ptt-slot-btn,
+      .ht-float-ptt {
         touch-action: none;
         -webkit-user-drag: none;
       }
@@ -394,48 +390,234 @@
         text-align: center;
         line-height: 1.1;
       }
+
+      #ht-main-shell.is-minimized {
+        display: none;
+      }
+
+      body.ht-floating {
+        align-items: stretch;
+        justify-content: flex-start;
+        background: #020617;
+      }
+
+      .ht-float-widget {
+        display: none;
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 80;
+        width: 168px;
+        background: #111827;
+        border: 2px solid #334155;
+        border-radius: 1.1rem;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+        overflow: hidden;
+        flex-direction: column;
+      }
+
+      .ht-float-widget.is-active {
+        display: flex;
+      }
+
+      .ht-float-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.35rem;
+        padding: 0.4rem 0.5rem;
+        background: #030712;
+        border-bottom: 1px solid #1f2937;
+        cursor: grab;
+        touch-action: none;
+      }
+
+      .ht-float-header:active {
+        cursor: grabbing;
+      }
+
+      .ht-float-title {
+        font-family: "Courier New", Courier, monospace;
+        font-size: 10px;
+        font-weight: 800;
+        color: #6ee7b7;
+        letter-spacing: 0.02em;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .ht-float-led {
+        width: 8px;
+        height: 8px;
+        border-radius: 9999px;
+        background: #10b981;
+        box-shadow: 0 0 8px #10b981;
+        flex-shrink: 0;
+      }
+
+      .ht-float-led.is-tx {
+        background: #ef4444;
+        box-shadow: 0 0 10px #ef4444;
+      }
+
+      .ht-float-led.is-rx {
+        background: #22d3ee;
+        box-shadow: 0 0 10px #22d3ee;
+      }
+
+      .ht-float-expand {
+        width: 22px;
+        height: 22px;
+        border-radius: 9999px;
+        border: 1px solid #374151;
+        background: #1f2937;
+        color: #d1d5db;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9px;
+      }
+
+      .ht-float-body {
+        padding: 0.55rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .ht-float-ptt {
+        width: 88px;
+        height: 88px;
+        border-radius: 9999px;
+        border: 3px solid #374151;
+        color: #d1d5db;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .ht-float-ptt.is-rx {
+        opacity: 0.55;
+        border-color: #0891b2;
+        cursor: not-allowed;
+      }
+
+      .ht-float-dual {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.4rem;
+        width: 100%;
+      }
+
+      .ht-float-dual .ht-float-ptt {
+        width: 100%;
+        height: 72px;
+        font-size: 10px;
+      }
+
+      .ht-headset-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.4rem;
+      }
+
+      #lcd-dual-panel {
+        display: none;
+        flex-direction: column;
+        gap: 0.4rem;
+        margin: 0.5rem 0;
+      }
+
+      #lcd-dual-panel.is-active {
+        display: flex;
+      }
+
+      #lcd-single-panel.is-hidden {
+        display: none;
+      }
+
+      .lcd-slot-a {
+        align-self: flex-end;
+        width: min(78%, 16rem);
+        text-align: right;
+      }
+
+      .lcd-slot-b {
+        width: 100%;
+        text-align: left;
+      }
+
+      .lcd-vis {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .lcd-vis-a {
+        height: 1.65rem;
+        background: rgba(6, 46, 29, 0.6);
+        border: 1px solid rgba(6, 95, 70, 0.55);
+        border-radius: 0.35rem;
+      }
+
+      .lcd-vis-b {
+        height: 2rem;
+        background: rgba(8, 47, 73, 0.55);
+        border: 1px solid rgba(14, 116, 144, 0.55);
+        border-radius: 0.35rem;
+      }
+
+      .lcd-idle-a {
+        color: rgba(16, 185, 129, 0.7);
+      }
+
+      .lcd-idle-b {
+        color: rgba(56, 189, 248, 0.75);
+      }
     </style>
   </head>
   <body
-    class="bg-gray-950 text-gray-100 min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 no-select font-sans"
-  >
+    class="bg-gray-950 text-gray-100 min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 no-select font-sans">
     <!-- Main Walkie Talkie Shell -->
     <div
-      class="w-full max-w-md bg-gray-900 border-4 border-gray-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col relative"
-    >
+      id="ht-main-shell"
+      class="w-full max-w-md bg-gray-900 border-4 border-gray-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col relative">
       <!-- Top Antenna & Dial Accent -->
       <div
-        class="h-6 bg-gray-950 flex items-center justify-between px-8 border-b border-gray-800 relative"
-      >
+        class="h-6 bg-gray-950 flex items-center justify-between px-8 border-b border-gray-800 relative">
         <div
-          class="absolute -top-5 left-8 w-4 h-8 bg-gray-800 rounded-t-sm border-t border-gray-600"
-        ></div>
+          class="absolute -top-5 left-8 w-4 h-8 bg-gray-800 rounded-t-sm border-t border-gray-600"></div>
         <div
-          class="absolute -top-4 right-8 w-7 h-6 bg-gray-700 rounded-t-md border-t border-gray-500"
-        ></div>
+          class="absolute -top-4 right-8 w-7 h-6 bg-gray-700 rounded-t-md border-t border-gray-500"></div>
       </div>
 
       <!-- Header / Brand Banner -->
       <div
-        class="bg-gray-800 px-4 py-3 flex items-center justify-between border-b border-gray-700"
-      >
+        class="bg-gray-800 px-4 py-3 flex items-center justify-between border-b border-gray-700">
         <div class="flex items-center space-x-2">
           <i class="fa-solid text-amber-500 text-lg">📻</i>
           <div>
             <h1 class="font-extrabold text-sm tracking-wider text-gray-200">
-               HT SIBAGUS
+              HT SIBAGUS
             </h1>
-            <p class="text-[10px] text-gray-400">
-              WebRTC PWA • VOX Auto
-            </p>
+            <p class="text-[10px] text-gray-400">WebRTC PWA • VOX Auto</p>
           </div>
         </div>
         <div class="flex items-center space-x-2">
           <button
             id="btn-pwa-install"
             class="hidden text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-2 py-1 rounded shadow flex items-center space-x-1"
-            title="Install aplikasi PTT SIBAGUS"
-          >
+            title="Install aplikasi PTT SIBAGUS">
             <i class="fa-solid fa-download"></i>
             <span>Install</span>
           </button>
@@ -447,18 +629,22 @@
           </span>
           <span
             id="led-indicator"
-            class="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse"
-          ></span>
+            class="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse"></span>
           <span
             id="led-text"
             class="text-[10px] font-mono font-bold text-emerald-400"
             >READY</span
           >
           <button
+            id="btn-minimize"
+            class="w-7 h-7 rounded-full bg-sky-900/50 hover:bg-sky-700 border border-sky-700 text-sky-300 hover:text-white flex items-center justify-center transition-colors"
+            title="Mode mengambang">
+            <i class="fa-solid fa-window-minimize text-[10px]"></i>
+          </button>
+          <button
             id="btn-power-off"
             class="w-7 h-7 rounded-full bg-rose-900/60 hover:bg-rose-700 border border-rose-700 text-rose-400 hover:text-white flex items-center justify-center transition-colors"
-            title="Matikan HT"
-          >
+            title="Matikan HT">
             <i class="fa-solid fa-power-off text-[11px]"></i>
           </button>
         </div>
@@ -467,24 +653,18 @@
       <!-- Digital LCD Screen -->
       <div class="p-4 bg-gray-900">
         <div
-          class="lcd-screen-green rounded-xl p-3 text-emerald-400 flex flex-col justify-between shadow-inner relative overflow-hidden"
-        >
+          class="lcd-screen-green rounded-xl p-3 text-emerald-400 flex flex-col justify-between shadow-inner relative overflow-hidden">
           <!-- LCD Top Info Bar -->
           <div
-            class="flex justify-between items-center text-xs font-mono border-b border-emerald-900/60 pb-1"
-          >
+            class="flex justify-between items-center text-xs font-mono border-b border-emerald-900/60 pb-1">
             <div class="flex items-center space-x-2 min-w-0">
-             
-             
-              <span id="rssi-display" class="flex items-center space-x-1 truncate">
+              <span
+                id="rssi-display"
+                class="flex items-center space-x-1 truncate">
                 <i
                   id="rssi-signal-icon"
-                  class="fa-solid fa-signal text-emerald-400"
-                ></i>
-                <span
-                  >CH:
-                  <strong id="channel-num-display">01</strong></span
-                >
+                  class="fa-solid fa-signal text-emerald-400"></i>
+                <span>CH: <strong id="channel-num-display">01</strong></span>
                 <span class="text-[10px] text-emerald-500 whitespace-nowrap">
                   <span id="speed-down">↓--</span>
                   <span id="speed-up" class="ml-1">↑--</span>
@@ -492,13 +672,13 @@
               </span>
             </div>
             <div class="flex items-center space-x-2">
-            <span
-              id="dual-mode-badge"
-              class="px-1.5 py-0.5 rounded text-[10px] bg-sky-950 text-sky-300 font-bold border border-sky-700"
-              >DUAL</span
-            >
-            <span
-              id="vox-badge"
+              <span
+                id="dual-mode-badge"
+                class="px-1.5 py-0.5 rounded text-[10px] bg-sky-950 text-sky-300 font-bold border border-sky-700"
+                >DUAL</span
+              >
+              <span
+                id="vox-badge"
                 class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-950 text-gray-500 font-bold border border-emerald-900"
                 >VOX OFF</span
               >
@@ -510,44 +690,85 @@
             </div>
           </div>
 
-          <!-- Saluran & Frekuensi (satu tampilan) -->
-          <div class="my-2 text-center">
+          <!-- Saluran tunggal -->
+          <div id="lcd-single-panel">
+            <div class="my-2 text-center">
+              <div
+                id="freq-display"
+                class="text-xl sm:text-2xl font-extrabold tracking-wider lcd-text text-emerald-300">
+                CH 01 · 446.006
+              </div>
+            </div>
             <div
-              id="freq-display"
-              class="text-xl sm:text-2xl font-extrabold tracking-wider lcd-text text-emerald-300"
-            >
-              CH 01 · 446.00625 MHz
+              class="h-10 w-full bg-emerald-950/60 rounded border border-emerald-800/50 flex items-center justify-center overflow-hidden relative">
+              <canvas id="visualizer" class="w-full h-full"></canvas>
+              <div
+                id="no-audio-text"
+                class="absolute text-[11px] font-mono text-emerald-600/70">
+                Audio Idle
+              </div>
             </div>
           </div>
 
-          <!-- Audio Oscilloscope / Visualizer Wave -->
-          <div
-            class="h-10 w-full bg-emerald-950/60 rounded border border-emerald-800/50 flex items-center justify-center overflow-hidden relative"
-          >
-            <canvas id="visualizer" class="w-full h-full"></canvas>
-            <div
-              id="no-audio-text"
-              class="absolute text-[11px] font-mono text-emerald-600/70"
-            >
-              Audio Idle
+          <!-- Dual: A pojok kanan, B di bawah (biru) -->
+          <div id="lcd-dual-panel">
+            <div class="lcd-slot-a">
+              <div class="text-[9px] font-mono text-emerald-500 tracking-wider">
+                PTT A
+              </div>
+              <div
+                id="freq-display-a"
+                class="text-sm font-extrabold tracking-wider lcd-text text-emerald-300 leading-tight">
+                CH 01 · 446.006
+              </div>
+              <div class="lcd-vis lcd-vis-a mt-1">
+                <canvas id="visualizer-a" class="w-full h-full"></canvas>
+                <div
+                  id="no-audio-text-a"
+                  class="absolute text-[10px] font-mono lcd-idle-a">
+                  Audio Idle
+                </div>
+              </div>
+            </div>
+            <div class="lcd-slot-b">
+              <div class="text-[9px] font-mono text-sky-400 tracking-wider">
+                PTT B
+              </div>
+              <div
+                id="freq-display-b"
+                class="text-base sm:text-lg font-extrabold tracking-wider lcd-text text-sky-300 leading-tight">
+                CH 02 · 446.019
+              </div>
+              <div class="lcd-vis lcd-vis-b mt-1">
+                <canvas id="visualizer-b" class="w-full h-full"></canvas>
+                <div
+                  id="no-audio-text-b"
+                  class="absolute text-[10px] font-mono lcd-idle-b">
+                  Audio Idle
+                </div>
+              </div>
             </div>
           </div>
 
           <!-- Speaker & User Status Banner -->
           <div
             id="active-speaker-box"
-            class="mt-2 text-[11px] font-mono bg-emerald-950/80 p-1.5 rounded border border-emerald-800 flex justify-between items-center"
-          >
+            class="mt-2 text-[11px] font-mono bg-emerald-950/80 p-1.5 rounded border border-emerald-800 flex justify-between items-center">
             <span class="truncate flex items-center"
               >Nama:
-              <strong id="my-peer-id" class="text-emerald-200 ml-1 cursor-pointer hover:underline" title="Klik untuk ubah nama"
+              <strong
+                id="my-peer-id"
+                class="text-emerald-200 ml-1 cursor-pointer hover:underline"
+                title="Klik untuk ubah nama"
                 >Menghubungkan...</strong
               >
-              <button id="btn-edit-username" class="text-emerald-400 hover:text-emerald-200 ml-1.5 bg-emerald-900/40 hover:bg-emerald-900/80 px-1 py-0.5 rounded text-[8px]" title="Ubah Nama">
+              <button
+                id="btn-edit-username"
+                class="text-emerald-400 hover:text-emerald-200 ml-1.5 bg-emerald-900/40 hover:bg-emerald-900/80 px-1 py-0.5 rounded text-[8px]"
+                title="Ubah Nama">
                 <i class="fa-solid fa-pen"></i>
               </button>
-            </span
-            >
+            </span>
             <span
               id="users-count"
               class="bg-emerald-900 px-1.5 py-0.5 rounded text-[10px] font-bold"
@@ -559,19 +780,15 @@
 
       <!-- Saluran Radio & Frekuensi (satu kesatuan) -->
       <div class="px-4 py-2 bg-gray-900">
-        <div
-          class="bg-gray-800 p-2.5 rounded-lg border border-gray-700"
-        >
+        <div class="bg-gray-800 p-2.5 rounded-lg border border-gray-700">
           <label
-            class="text-[10px] text-gray-400 font-semibold uppercase flex justify-between mb-1.5"
-          >
+            class="text-[10px] text-gray-400 font-semibold uppercase flex justify-between mb-1.5">
             <span>Saluran &amp; Frekuensi PMR</span>
             <button
               id="btn-open-dual"
               type="button"
               class="text-sky-400 hover:text-sky-300 font-mono normal-case tracking-normal"
-              title="Pengaturan dual saluran"
-            >
+              title="Pengaturan dual saluran & PTT headset">
               <i class="fa-solid fa-layer-group mr-0.5"></i>Dual
             </button>
           </label>
@@ -579,21 +796,18 @@
             <button
               id="btn-ch-down"
               type="button"
-              class="bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-gray-200 w-9 h-9 rounded font-bold flex items-center justify-center shrink-0"
-            >
+              class="bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-gray-200 w-9 h-9 rounded font-bold flex items-center justify-center shrink-0">
               <i class="fa-solid fa-chevron-left"></i>
             </button>
             <select
               id="channel-select"
-              class="w-full bg-gray-900 border border-gray-700 text-amber-300 font-mono text-[11px] rounded px-2 py-2 text-center font-bold focus:outline-none focus:border-amber-500"
-            >
+              class="w-full bg-gray-900 border border-gray-700 text-amber-300 font-mono text-[11px] rounded px-2 py-2 text-center font-bold focus:outline-none focus:border-amber-500">
               <!-- Populated via JavaScript -->
             </select>
             <button
               id="btn-ch-up"
               type="button"
-              class="bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-gray-200 w-9 h-9 rounded font-bold flex items-center justify-center shrink-0"
-            >
+              class="bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-gray-200 w-9 h-9 rounded font-bold flex items-center justify-center shrink-0">
               <i class="fa-solid fa-chevron-right"></i>
             </button>
           </div>
@@ -601,15 +815,15 @@
       </div>
 
       <!-- Toggle Controls (VOX Auto, Radio Filters & Sound FX) -->
-      <div class="px-3 sm:px-4 py-2 bg-gray-900 space-y-2 border-t border-gray-800/80">
+      <div
+        class="px-3 sm:px-4 py-2 bg-gray-900 space-y-2 border-t border-gray-800/80">
         <!-- Toolbar satu baris -->
         <div class="ht-toolbar">
           <button
             id="toggle-vox"
             type="button"
             class="ht-toolbar-btn ht-toolbar-btn--vox-off"
-            title="Voice Operated Transmit (VOX)"
-          >
+            title="Voice Operated Transmit (VOX)">
             <i class="fa-solid fa-microphone-lines" aria-hidden="true"></i>
             <span class="ht-toolbar-text">
               <span class="ht-toolbar-prefix">VOX: </span
@@ -621,8 +835,7 @@
             id="toggle-filter"
             type="button"
             class="ht-toolbar-btn ht-toolbar-btn--filter-on"
-            title="Filter audio HT"
-          >
+            title="Filter audio HT">
             <i class="fa-solid fa-filter" aria-hidden="true"></i>
             <span class="ht-toolbar-text">
               <span class="ht-toolbar-prefix">Filter: </span
@@ -634,8 +847,7 @@
             id="toggle-sound"
             type="button"
             class="ht-toolbar-btn ht-toolbar-btn--beep-on"
-            title="Suara Roger Beep"
-          >
+            title="Suara Roger Beep">
             <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
             <span class="ht-toolbar-text">
               <span class="ht-toolbar-prefix">Beep: </span
@@ -647,8 +859,7 @@
             id="btn-open-mic"
             type="button"
             class="ht-toolbar-btn ht-toolbar-btn--mic"
-            title="Mikrofon"
-          >
+            title="Mikrofon">
             <i class="fa-solid fa-microphone" aria-hidden="true"></i>
             <span class="ht-toolbar-text">MIC</span>
           </button>
@@ -657,8 +868,7 @@
             id="btn-open-emoji"
             type="button"
             class="ht-toolbar-btn ht-toolbar-btn--emoji"
-            title="Reaksi emoji saluran"
-          >
+            title="Reaksi emoji saluran">
             <i class="fa-solid fa-face-smile" aria-hidden="true"></i>
             <span class="ht-toolbar-text">REACT</span>
           </button>
@@ -667,11 +877,9 @@
         <!-- VOX Sensitivity Slider & Level Meter (Hidden by default until VOX ON) -->
         <div
           id="vox-control-panel"
-          class="hidden bg-gray-950 p-2 rounded-lg border border-gray-800 space-y-1.5"
-        >
+          class="hidden bg-gray-950 p-2 rounded-lg border border-gray-800 space-y-1.5">
           <div
-            class="flex justify-between items-center text-[10px] font-mono text-amber-400"
-          >
+            class="flex justify-between items-center text-[10px] font-mono text-amber-400">
             <span>Sensitivitas VOX (Pemicu Suara Otomatis):</span>
             <span id="vox-sens-label">30%</span>
           </div>
@@ -682,31 +890,28 @@
               min="5"
               max="90"
               value="30"
-              class="w-full accent-amber-500 h-1.5 bg-gray-800 rounded appearance-none cursor-pointer"
-            />
+              class="w-full accent-amber-500 h-1.5 bg-gray-800 rounded appearance-none cursor-pointer" />
           </div>
           <!-- Live Audio Level Meter -->
           <div
-            class="w-full h-2 bg-gray-900 rounded overflow-hidden relative border border-gray-800 flex items-center"
-          >
+            class="w-full h-2 bg-gray-900 rounded overflow-hidden relative border border-gray-800 flex items-center">
             <div
               id="vox-level-bar"
-              class="h-full bg-emerald-500 w-0 transition-all duration-75"
-            ></div>
+              class="h-full bg-emerald-500 w-0 transition-all duration-75"></div>
             <div
               id="vox-threshold-marker"
               class="absolute top-0 bottom-0 w-1 bg-amber-400 shadow"
-              style="left: 30%"
-            ></div>
+              style="left: 30%"></div>
           </div>
         </div>
       </div>
 
       <!-- Main PTT Button Area -->
       <div
-        class="p-6 bg-gray-950 flex flex-col items-center justify-center relative border-t border-gray-800"
-      >
-        <p id="ptt-hint-single" class="text-xs text-gray-400 mb-3 text-center font-medium">
+        class="p-6 bg-gray-950 flex flex-col items-center justify-center relative border-t border-gray-800">
+        <p
+          id="ptt-hint-single"
+          class="text-xs text-gray-400 mb-3 text-center font-medium">
           Tahan tombol di bawah atau tekan
           <kbd
             class="px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded text-amber-400"
@@ -721,14 +926,15 @@
         </p>
         <p
           id="ptt-hint-dual"
-          class="hidden text-xs text-gray-400 mb-3 text-center font-medium"
-        >
+          class="hidden text-xs text-gray-400 mb-3 text-center font-medium">
           Dual saluran aktif —
-          <kbd class="px-1 py-0.5 bg-gray-800 border border-gray-700 rounded text-amber-400"
+          <kbd
+            class="px-1 py-0.5 bg-gray-800 border border-gray-700 rounded text-amber-400"
             >Space</kbd
           >
           = PTT A,
-          <kbd class="px-1 py-0.5 bg-gray-800 border border-gray-700 rounded text-sky-400"
+          <kbd
+            class="px-1 py-0.5 bg-gray-800 border border-gray-700 rounded text-sky-400"
             >T</kbd
           >
           = PTT B
@@ -738,8 +944,7 @@
         <div id="ptt-single-wrap">
           <button
             id="ptt-button"
-            class="w-40 h-40 rounded-full ptt-idle border-4 border-gray-700 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer"
-          >
+            class="w-40 h-40 rounded-full ptt-idle border-4 border-gray-700 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer">
             <i class="fa-solid fa-microphone text-3xl mb-1 text-amber-500"></i>
             <span class="font-extrabold text-base tracking-wider"
               >PUSH TO TALK</span
@@ -760,9 +965,9 @@
               id="ptt-button-a"
               type="button"
               data-slot="A"
-              class="ptt-slot-btn ptt-idle border-4 border-gray-700 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer"
-            >
-              <i class="fa-solid fa-microphone text-2xl mb-1 text-amber-500"></i>
+              class="ptt-slot-btn ptt-idle border-4 border-gray-700 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer">
+              <i
+                class="fa-solid fa-microphone text-2xl mb-1 text-amber-500"></i>
               <span class="font-extrabold text-xs tracking-wide">PTT A</span>
               <span
                 id="ptt-subtext-a"
@@ -772,15 +977,14 @@
             </button>
           </div>
           <div class="flex flex-col items-center">
-            <span id="ptt-label-b" class="ptt-slot-label">PTT B · CH 02</span>
+            <span id="ptt-label-b" class="ptt-slot-label text-sky-300">PTT B · CH 02</span>
             <button
               id="ptt-button-b"
               type="button"
               data-slot="B"
-              class="ptt-slot-btn ptt-idle border-4 border-sky-800 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer"
-            >
-              <i class="fa-solid fa-microphone text-2xl mb-1 text-sky-400"></i>
-              <span class="font-extrabold text-xs tracking-wide">PTT B</span>
+              class="ptt-slot-btn ptt-idle border-4 border-sky-500 bg-sky-950/50 flex flex-col items-center justify-center text-sky-100 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer">
+              <i class="fa-solid fa-microphone text-2xl mb-1 text-sky-300"></i>
+              <span class="font-extrabold text-xs tracking-wide text-sky-200">PTT B</span>
               <span
                 id="ptt-subtext-b"
                 class="text-[9px] text-gray-400 font-mono mt-0.5 text-center px-1"
@@ -795,15 +999,13 @@
 
         <div
           id="mic-warning"
-          class="hidden mt-3 text-center text-xs text-rose-400 bg-rose-950/60 p-2 rounded border border-rose-800"
-        >
+          class="hidden mt-3 text-center text-xs text-rose-400 bg-rose-950/60 p-2 rounded border border-rose-800">
           <i class="fa-solid fa-triangle-exclamation mr-1"></i> Izin mikrofon
           diperlukan.
           <button
             id="btn-mic-retry"
             type="button"
-            class="block mx-auto mt-2 px-3 py-1 bg-rose-800 hover:bg-rose-700 text-white rounded text-[11px] font-bold"
-          >
+            class="block mx-auto mt-2 px-3 py-1 bg-rose-800 hover:bg-rose-700 text-white rounded text-[11px] font-bold">
             <i class="fa-solid fa-microphone mr-1"></i> Izinkan Mikrofon
           </button>
         </div>
@@ -818,15 +1020,13 @@
           >
           <button
             id="btn-share"
-            class="text-[10px] bg-gray-800 hover:bg-gray-700 text-amber-400 px-2 py-0.5 rounded border border-gray-700"
-          >
+            class="text-[10px] bg-gray-800 hover:bg-gray-700 text-amber-400 px-2 py-0.5 rounded border border-gray-700">
             <i class="fa-solid fa-share-nodes mr-1"></i>Bagikan Room
           </button>
         </div>
         <div
           id="peers-list"
-          class="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto pt-1"
-        >
+          class="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto pt-1">
           <span class="text-[11px] text-gray-500 italic"
             >Mencari anggota lain...</span
           >
@@ -837,53 +1037,47 @@
     <!-- Microphone Settings Modal -->
     <div
       id="modal-mic"
-      class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    >
+      class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div
-        class="bg-gray-900 border border-purple-800/60 rounded-2xl w-full max-w-sm p-4 text-gray-200 shadow-2xl"
-      >
+        class="bg-gray-900 border border-purple-800/60 rounded-2xl w-full max-w-sm p-4 text-gray-200 shadow-2xl">
         <div
-          class="flex justify-between items-center border-b border-gray-800 pb-2 mb-3"
-        >
+          class="flex justify-between items-center border-b border-gray-800 pb-2 mb-3">
           <h3
-            class="font-bold text-purple-400 text-sm flex items-center space-x-2"
-          >
+            class="font-bold text-purple-400 text-sm flex items-center space-x-2">
             <i class="fa-solid fa-microphone"></i>
             <span>Pengaturan Mikrofon</span>
           </h3>
           <button
             id="btn-close-mic"
             type="button"
-            class="text-gray-400 hover:text-white font-bold"
-          >
+            class="text-gray-400 hover:text-white font-bold">
             &times;
           </button>
         </div>
 
         <p class="text-[11px] text-gray-400 mb-3">
           Pilih sumber audio untuk transmisi PTT.
-          <strong class="text-purple-300">Speaker Perangkat</strong> =
-          PTT otomatis ON (relay audio), RX peer lain tetap aktif.
+          <strong class="text-purple-300">Speaker Perangkat</strong> = PTT
+          otomatis ON (relay audio), RX peer lain tetap aktif.
           <strong class="text-emerald-300">Mic Internal</strong> = PTT gantian
           (manual / VOX).
         </p>
 
         <div class="space-y-3 text-xs">
           <div>
-            <label class="block text-[10px] font-mono text-gray-400 uppercase mb-2"
+            <label
+              class="block text-[10px] font-mono text-gray-400 uppercase mb-2"
               >Sumber Audio</label
             >
             <div class="space-y-2">
               <label
-                class="flex items-center space-x-2 p-2 rounded-lg border border-gray-800 bg-gray-950 cursor-pointer hover:border-purple-700 has-[:checked]:border-purple-600 has-[:checked]:bg-purple-950/30"
-              >
+                class="flex items-center space-x-2 p-2 rounded-lg border border-gray-800 bg-gray-950 cursor-pointer hover:border-purple-700 has-[:checked]:border-purple-600 has-[:checked]:bg-purple-950/30">
                 <input
                   type="radio"
                   name="mic-source-mode"
                   value="internal"
                   class="accent-purple-500"
-                  checked
-                />
+                  checked />
                 <div>
                   <span class="font-bold text-gray-200">Mikrofon Internal</span>
                   <p class="text-[10px] text-gray-500">
@@ -892,30 +1086,28 @@
                 </div>
               </label>
               <label
-                class="flex items-center space-x-2 p-2 rounded-lg border border-gray-800 bg-gray-950 cursor-pointer hover:border-purple-700 has-[:checked]:border-purple-600 has-[:checked]:bg-purple-950/30"
-              >
+                class="flex items-center space-x-2 p-2 rounded-lg border border-gray-800 bg-gray-950 cursor-pointer hover:border-purple-700 has-[:checked]:border-purple-600 has-[:checked]:bg-purple-950/30">
                 <input
                   type="radio"
                   name="mic-source-mode"
                   value="speaker"
-                  class="accent-purple-500"
-                />
+                  class="accent-purple-500" />
                 <div>
-                  <span class="font-bold text-gray-200">Audio dari Speaker</span>
+                  <span class="font-bold text-gray-200"
+                    >Audio dari Speaker</span
+                  >
                   <p class="text-[10px] text-gray-500">
                     Ambil suara langsung dari output speaker perangkat
                   </p>
                 </div>
               </label>
               <label
-                class="flex items-center space-x-2 p-2 rounded-lg border border-gray-800 bg-gray-950 cursor-pointer hover:border-purple-700 has-[:checked]:border-purple-600 has-[:checked]:bg-purple-950/30"
-              >
+                class="flex items-center space-x-2 p-2 rounded-lg border border-gray-800 bg-gray-950 cursor-pointer hover:border-purple-700 has-[:checked]:border-purple-600 has-[:checked]:bg-purple-950/30">
                 <input
                   type="radio"
                   name="mic-source-mode"
                   value="device"
-                  class="accent-purple-500"
-                />
+                  class="accent-purple-500" />
                 <div>
                   <span class="font-bold text-gray-200">Pilih Manual</span>
                   <p class="text-[10px] text-gray-500">
@@ -934,16 +1126,14 @@
             >
             <select
               id="mic-device-select"
-              class="w-full bg-gray-950 border border-gray-700 rounded px-2.5 py-1.5 text-purple-300 font-mono text-xs focus:outline-none focus:border-purple-500"
-            >
+              class="w-full bg-gray-950 border border-gray-700 rounded px-2.5 py-1.5 text-purple-300 font-mono text-xs focus:outline-none focus:border-purple-500">
               <option value="">Memuat perangkat...</option>
             </select>
           </div>
 
           <div
             id="mic-current-status"
-            class="text-[10px] font-mono text-gray-500 bg-gray-950 p-2 rounded border border-gray-800"
-          >
+            class="text-[10px] font-mono text-gray-500 bg-gray-950 p-2 rounded border border-gray-800">
             Aktif: Mikrofon Internal
           </div>
         </div>
@@ -952,15 +1142,13 @@
           <button
             id="btn-refresh-mic-devices"
             type="button"
-            class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs py-2 rounded-lg border border-gray-700"
-          >
+            class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs py-2 rounded-lg border border-gray-700">
             <i class="fa-solid fa-rotate mr-1"></i> Refresh
           </button>
           <button
             id="btn-save-mic"
             type="button"
-            class="flex-1 bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs py-2 rounded-lg border border-purple-600"
-          >
+            class="flex-1 bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs py-2 rounded-lg border border-purple-600">
             <i class="fa-solid fa-check mr-1"></i> Terapkan
           </button>
         </div>
@@ -970,25 +1158,20 @@
     <!-- Dual Channel Settings Modal -->
     <div
       id="modal-dual"
-      class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[56] flex items-center justify-center p-4"
-    >
+      class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[56] flex items-center justify-center p-4">
       <div
-        class="bg-gray-900 border border-sky-700/60 rounded-2xl w-full max-w-sm p-4 text-gray-200 shadow-2xl"
-      >
+        class="bg-gray-900 border border-sky-700/60 rounded-2xl w-full max-w-sm p-4 text-gray-200 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div
-          class="flex justify-between items-center border-b border-gray-800 pb-2 mb-3"
-        >
+          class="flex justify-between items-center border-b border-gray-800 pb-2 mb-3">
           <h3
-            class="font-bold text-sky-400 text-sm flex items-center space-x-2"
-          >
+            class="font-bold text-sky-400 text-sm flex items-center space-x-2">
             <i class="fa-solid fa-layer-group"></i>
             <span>Dual Saluran</span>
           </h3>
           <button
             id="btn-close-dual"
             type="button"
-            class="text-gray-400 hover:text-white font-bold text-lg leading-none"
-          >
+            class="text-gray-400 hover:text-white font-bold text-lg leading-none">
             &times;
           </button>
         </div>
@@ -1000,15 +1183,15 @@
         </p>
 
         <label
-          class="flex items-center space-x-2 p-2.5 rounded-lg border border-gray-800 bg-gray-950 cursor-pointer hover:border-sky-700 has-[:checked]:border-sky-600 has-[:checked]:bg-sky-950/30 mb-3"
-        >
+          class="flex items-center space-x-2 p-2.5 rounded-lg border border-gray-800 bg-gray-950 cursor-pointer hover:border-sky-700 has-[:checked]:border-sky-600 has-[:checked]:bg-sky-950/30 mb-3">
           <input
             id="toggle-dual-channel"
             type="checkbox"
-            class="accent-sky-500"
-          />
+            class="accent-sky-500" />
           <div>
-            <span class="font-bold text-gray-200 text-xs">Mode Dual Saluran</span>
+            <span class="font-bold text-gray-200 text-xs"
+              >Mode Dual Saluran</span
+            >
             <p class="text-[10px] text-gray-500">
               Monitor &amp; PTT dua frekuensi bersamaan
             </p>
@@ -1023,23 +1206,81 @@
           >
           <select
             id="dual-channel-b-select"
-            class="w-full bg-gray-950 border border-gray-700 rounded px-2.5 py-1.5 text-sky-300 font-mono text-xs focus:outline-none focus:border-sky-500"
-          ></select>
+            class="w-full bg-gray-950 border border-gray-700 rounded px-2.5 py-1.5 text-sky-300 font-mono text-xs focus:outline-none focus:border-sky-500"></select>
         </div>
 
         <div
           id="dual-current-status"
-          class="text-[10px] font-mono text-gray-500 bg-gray-950 p-2 rounded border border-gray-800 mt-3"
-        >
+          class="text-[10px] font-mono text-gray-500 bg-gray-950 p-2 rounded border border-gray-800 mt-3">
           Mode: Saluran tunggal
+        </div>
+
+        <div class="mt-3 pt-3 border-t border-gray-800 space-y-2">
+          <label
+            class="flex items-center space-x-2 p-2.5 rounded-lg border border-gray-800 bg-gray-950 cursor-pointer hover:border-amber-700 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-950/20">
+            <input
+              id="toggle-headset-ptt"
+              type="checkbox"
+              class="accent-amber-500" />
+            <div>
+              <span class="font-bold text-gray-200 text-xs">PTT Headset</span>
+              <p class="text-[10px] text-gray-500">
+                Tombol headset / media / gamepad sebagai PTT
+              </p>
+            </div>
+          </label>
+          <div id="headset-ptt-panel" class="hidden space-y-2">
+            <div class="ht-headset-grid">
+              <div>
+                <label
+                  class="block text-[10px] font-mono text-gray-400 uppercase mb-1"
+                  for="headset-ptt-mode"
+                  >Mode</label
+                >
+                <select
+                  id="headset-ptt-mode"
+                  class="w-full bg-gray-950 border border-gray-700 rounded px-2 py-1.5 text-amber-300 font-mono text-[11px] focus:outline-none focus:border-amber-500">
+                  <option value="hold">Tahan (push/off)</option>
+                  <option value="toggle">Toggle (klik on/off)</option>
+                </select>
+              </div>
+              <div>
+                <label
+                  class="block text-[10px] font-mono text-gray-400 uppercase mb-1"
+                  for="headset-ptt-button"
+                  >Tombol</label
+                >
+                <select
+                  id="headset-ptt-button"
+                  class="w-full bg-gray-950 border border-gray-700 rounded px-2 py-1.5 text-amber-300 font-mono text-[11px] focus:outline-none focus:border-amber-500">
+                  <option value="playpause">Play / Pause</option>
+                  <option value="volup">Volume +</option>
+                  <option value="voldown">Volume -</option>
+                  <option value="gamepad">Gamepad / HID</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label
+                class="block text-[10px] font-mono text-gray-400 uppercase mb-1"
+                for="headset-ptt-slot"
+                >Saluran headset</label
+              >
+              <select
+                id="headset-ptt-slot"
+                class="w-full bg-gray-950 border border-gray-700 rounded px-2 py-1.5 text-amber-300 font-mono text-[11px] focus:outline-none focus:border-amber-500">
+                <option value="A">PTT A (saluran utama)</option>
+                <option value="B">PTT B (saluran kedua)</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <div class="flex space-x-2 mt-4">
           <button
             id="btn-save-dual"
             type="button"
-            class="flex-1 bg-sky-700 hover:bg-sky-600 text-white font-bold text-xs py-2 rounded-lg border border-sky-600"
-          >
+            class="flex-1 bg-sky-700 hover:bg-sky-600 text-white font-bold text-xs py-2 rounded-lg border border-sky-600">
             <i class="fa-solid fa-check mr-1"></i> Terapkan
           </button>
         </div>
@@ -1049,25 +1290,20 @@
     <!-- Emoji Reaction Popup -->
     <div
       id="modal-emoji"
-      class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[55] flex items-end sm:items-center justify-center p-3 sm:p-4"
-    >
+      class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[55] flex items-end sm:items-center justify-center p-3 sm:p-4">
       <div
-        class="bg-gray-900 border border-amber-700/60 rounded-2xl w-full max-w-sm p-4 text-gray-200 shadow-2xl"
-      >
+        class="bg-gray-900 border border-amber-700/60 rounded-2xl w-full max-w-sm p-4 text-gray-200 shadow-2xl">
         <div
-          class="flex justify-between items-center border-b border-gray-800 pb-2 mb-3"
-        >
+          class="flex justify-between items-center border-b border-gray-800 pb-2 mb-3">
           <h3
-            class="font-bold text-amber-400 text-sm flex items-center space-x-2"
-          >
+            class="font-bold text-amber-400 text-sm flex items-center space-x-2">
             <i class="fa-solid fa-face-smile"></i>
             <span>Reaksi Saluran</span>
           </h3>
           <button
             id="btn-close-emoji"
             type="button"
-            class="text-gray-400 hover:text-white font-bold text-lg leading-none"
-          >
+            class="text-gray-400 hover:text-white font-bold text-lg leading-none">
             &times;
           </button>
         </div>
@@ -1083,19 +1319,16 @@
     <!-- Boot / Loading Progress Overlay -->
     <div
       id="boot-overlay"
-      class="fixed inset-0 bg-gray-950/95 backdrop-blur-sm z-[70] flex flex-col items-center justify-center p-6"
-    >
+      class="fixed inset-0 bg-gray-950/95 backdrop-blur-sm z-[70] flex flex-col items-center justify-center p-6">
       <div id="boot-logo-wrap" class="mb-4">
         <img
           id="boot-logo"
           src="./icon-512.png"
           alt="PTT SIBAGUS"
-          class="w-16 h-16 rounded-2xl border border-emerald-800 shadow-lg object-cover"
-        />
+          class="w-16 h-16 rounded-2xl border border-emerald-800 shadow-lg object-cover" />
         <div
           id="boot-logo-fallback"
-          class="hidden w-16 h-16 rounded-2xl border border-emerald-800 shadow-lg bg-emerald-950 flex items-center justify-center text-3xl"
-        >
+          class="hidden w-16 h-16 rounded-2xl border border-emerald-800 shadow-lg bg-emerald-950 flex items-center justify-center text-3xl">
           📻
         </div>
       </div>
@@ -1106,18 +1339,15 @@
         Memuat sistem...
       </p>
       <div
-        class="w-full max-w-xs h-2.5 bg-gray-900 rounded-full overflow-hidden border border-gray-700"
-      >
+        class="w-full max-w-xs h-2.5 bg-gray-900 rounded-full overflow-hidden border border-gray-700">
         <div
           id="boot-progress-bar"
           class="h-full bg-emerald-500 transition-all duration-300 ease-out"
-          style="width: 0%"
-        ></div>
+          style="width: 0%"></div>
       </div>
       <p
         id="boot-progress-label"
-        class="text-[10px] text-gray-500 mt-2 font-mono"
-      >
+        class="text-[10px] text-gray-500 mt-2 font-mono">
         0%
       </p>
     </div>
@@ -1125,26 +1355,28 @@
     <!-- Custom Username Input Modal -->
     <div
       id="modal-username"
-      class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm z-[80] flex items-center justify-center p-4"
-    >
+      class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
       <div
-        class="bg-gray-900 border-2 border-amber-600/80 rounded-2xl w-full max-w-sm p-5 text-gray-200 shadow-2xl relative"
-      >
+        class="bg-gray-900 border-2 border-amber-600/80 rounded-2xl w-full max-w-sm p-5 text-gray-200 shadow-2xl relative">
         <div class="text-center mb-4">
-          <div class="inline-flex p-3 bg-amber-500/10 rounded-full text-amber-500 mb-2 border border-amber-500/20">
+          <div
+            class="inline-flex p-3 bg-amber-500/10 rounded-full text-amber-500 mb-2 border border-amber-500/20">
             <i class="fa-solid fa-user-gear text-2xl animate-pulse"></i>
           </div>
-          <h3 class="font-extrabold text-amber-400 text-base tracking-wider uppercase">
+          <h3
+            class="font-extrabold text-amber-400 text-base tracking-wider uppercase">
             Identitas Operator HT
           </h3>
           <p class="text-[11px] text-gray-400 mt-1">
-            Masukkan Nama/Callsign Anda agar dapat dikenali oleh pengguna lain di saluran ini.
+            Masukkan Nama/Callsign Anda agar dapat dikenali oleh pengguna lain
+            di saluran ini.
           </p>
         </div>
 
         <div class="space-y-3">
           <div>
-            <label class="block text-[10px] font-mono text-gray-400 uppercase mb-1 tracking-wider"
+            <label
+              class="block text-[10px] font-mono text-gray-400 uppercase mb-1 tracking-wider"
               >Nama / Callsign</label
             >
             <input
@@ -1152,16 +1384,14 @@
               id="username-input"
               maxlength="15"
               placeholder="Contoh: ALPHA-01"
-              class="w-full bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-center text-amber-300 font-mono font-bold text-sm tracking-widest focus:outline-none focus:border-amber-500"
-            />
+              class="w-full bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-center text-amber-300 font-mono font-bold text-sm tracking-widest focus:outline-none focus:border-amber-500" />
           </div>
         </div>
 
         <div class="mt-5">
           <button
             id="btn-save-username"
-            class="w-full bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold text-xs uppercase tracking-wider py-2.5 rounded-lg transition-colors flex items-center justify-center space-x-2 shadow-lg shadow-amber-950/40"
-          >
+            class="w-full bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold text-xs uppercase tracking-wider py-2.5 rounded-lg transition-colors flex items-center justify-center space-x-2 shadow-lg shadow-amber-950/40">
             <i class="fa-solid fa-circle-check"></i>
             <span>Simpan & Masuk</span>
           </button>
@@ -1172,22 +1402,21 @@
     <!-- PWA Install Modal -->
     <div
       id="modal-pwa-install"
-      class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    >
+      class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div
-        class="bg-gray-900 border-2 border-emerald-700/80 rounded-2xl w-full max-w-sm p-5 text-gray-200 shadow-2xl"
-      >
+        class="bg-gray-900 border-2 border-emerald-700/80 rounded-2xl w-full max-w-sm p-5 text-gray-200 shadow-2xl">
         <div class="text-center mb-4">
           <img
             src="/icon-512.png"
             alt="PTT SIBAGUS"
-            class="w-16 h-16 rounded-2xl mx-auto mb-3 border border-emerald-800 shadow-lg"
-          />
-          <h3 class="font-extrabold text-emerald-400 text-base tracking-wider uppercase">
+            class="w-16 h-16 rounded-2xl mx-auto mb-3 border border-emerald-800 shadow-lg" />
+          <h3
+            class="font-extrabold text-emerald-400 text-base tracking-wider uppercase">
             Install PTT SIBAGUS
           </h3>
           <p class="text-[11px] text-gray-400 mt-1">
-            Pasang aplikasi di perangkat untuk akses cepat &amp; mode layar penuh
+            Pasang aplikasi di perangkat untuk akses cepat &amp; mode layar
+            penuh
           </p>
         </div>
 
@@ -1195,35 +1424,47 @@
           <button
             id="btn-pwa-install-confirm"
             type="button"
-            class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2.5 rounded-lg border border-emerald-500 flex items-center justify-center space-x-2"
-          >
+            class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2.5 rounded-lg border border-emerald-500 flex items-center justify-center space-x-2">
             <i class="fa-solid fa-download"></i>
             <span>Install Sekarang</span>
           </button>
         </div>
 
-        <div id="pwa-install-ios" class="hidden text-[11px] text-gray-300 space-y-2 mb-3 bg-gray-950/60 p-3 rounded-lg border border-gray-800">
-          <p class="font-bold text-amber-400 text-xs uppercase">iPhone / iPad (Safari):</p>
+        <div
+          id="pwa-install-ios"
+          class="hidden text-[11px] text-gray-300 space-y-2 mb-3 bg-gray-950/60 p-3 rounded-lg border border-gray-800">
+          <p class="font-bold text-amber-400 text-xs uppercase">
+            iPhone / iPad (Safari):
+          </p>
           <ol class="list-decimal list-inside space-y-1 text-gray-400">
-            <li>Buka di browser <strong class="text-gray-200">Safari</strong></li>
-            <li>Tap tombol <strong class="text-gray-200">Bagikan</strong> <i class="fa-solid fa-share-from-square"></i></li>
-            <li>Pilih <strong class="text-gray-200">"Add to Home Screen"</strong></li>
+            <li>
+              Buka di browser <strong class="text-gray-200">Safari</strong>
+            </li>
+            <li>
+              Tap tombol <strong class="text-gray-200">Bagikan</strong>
+              <i class="fa-solid fa-share-from-square"></i>
+            </li>
+            <li>
+              Pilih <strong class="text-gray-200">"Add to Home Screen"</strong>
+            </li>
             <li>Tap <strong class="text-gray-200">Add</strong></li>
           </ol>
         </div>
 
-        <div id="pwa-install-desktop" class="hidden text-[11px] text-gray-400 mb-3 bg-gray-950/60 p-3 rounded-lg border border-gray-800">
+        <div
+          id="pwa-install-desktop"
+          class="hidden text-[11px] text-gray-400 mb-3 bg-gray-950/60 p-3 rounded-lg border border-gray-800">
           <p>
-            Di Chrome/Edge, klik ikon <i class="fa-solid fa-download"></i> di bilah alamat
-            atau menu <strong class="text-gray-200">Install PTT SIBAGUS</strong>.
+            Di Chrome/Edge, klik ikon <i class="fa-solid fa-download"></i> di
+            bilah alamat atau menu
+            <strong class="text-gray-200">Install PTT SIBAGUS</strong>.
           </p>
         </div>
 
         <button
           id="btn-pwa-install-close"
           type="button"
-          class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs py-2 rounded-lg border border-gray-700"
-        >
+          class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs py-2 rounded-lg border border-gray-700">
           Tutup
         </button>
       </div>
@@ -1232,31 +1473,35 @@
     <!-- Power Off Confirmation Modal -->
     <div
       id="modal-poweroff"
-      class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    >
+      class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div
-        class="bg-gray-900 border-2 border-rose-700/80 rounded-2xl w-full max-w-xs p-5 text-gray-200 shadow-2xl text-center"
-      >
-        <div class="inline-flex p-3 bg-rose-500/10 rounded-full text-rose-500 mb-3 border border-rose-500/20">
+        class="bg-gray-900 border-2 border-rose-700/80 rounded-2xl w-full max-w-xs p-5 text-gray-200 shadow-2xl text-center">
+        <div
+          class="inline-flex p-3 bg-rose-500/10 rounded-full text-rose-500 mb-3 border border-rose-500/20">
           <i class="fa-solid fa-power-off text-2xl"></i>
         </div>
-        <h3 class="font-extrabold text-rose-400 text-base tracking-wider uppercase mb-1">
+        <h3
+          class="font-extrabold text-rose-400 text-base tracking-wider uppercase mb-1">
           Matikan HT?
         </h3>
         <p class="text-[11px] text-gray-400 mb-5">
-          Semua koneksi aktif akan diputus dan mikrofon akan dilepas.
+          Mini = radio mengambang tetap terhubung. Matikan = putus semua koneksi
+          dan lepas mikrofon.
         </p>
-        <div class="flex space-x-3">
+        <div class="flex space-x-2">
           <button
             id="btn-poweroff-cancel"
-            class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs py-2 rounded-lg border border-gray-700"
-          >
+            class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs py-2 rounded-lg border border-gray-700">
             Batal
           </button>
           <button
+            id="btn-poweroff-float"
+            class="flex-1 bg-sky-800 hover:bg-sky-700 text-sky-100 font-bold text-xs py-2 rounded-lg border border-sky-600">
+            <i class="fa-solid fa-window-restore mr-1"></i> Mini
+          </button>
+          <button
             id="btn-poweroff-confirm"
-            class="flex-1 bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs py-2 rounded-lg border border-rose-600"
-          >
+            class="flex-1 bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs py-2 rounded-lg border border-rose-600">
             <i class="fa-solid fa-power-off mr-1"></i> Matikan
           </button>
         </div>
@@ -1266,15 +1511,14 @@
     <!-- Powered Off Overlay -->
     <div
       id="overlay-powered-off"
-      class="hidden fixed inset-0 bg-black z-[60] flex flex-col items-center justify-center p-6"
-    >
+      class="hidden fixed inset-0 bg-black z-[60] flex flex-col items-center justify-center p-6">
       <div class="text-center">
         <div
-          class="inline-flex p-4 bg-gray-900 rounded-full border-2 border-gray-800 mb-4"
-        >
+          class="inline-flex p-4 bg-gray-900 rounded-full border-2 border-gray-800 mb-4">
           <i class="fa-solid fa-power-off text-4xl text-gray-600"></i>
         </div>
-        <h2 class="text-gray-500 font-extrabold text-lg tracking-widest uppercase mb-1">
+        <h2
+          class="text-gray-500 font-extrabold text-lg tracking-widest uppercase mb-1">
           HT MATI
         </h2>
         <p class="text-gray-600 text-xs font-mono mb-6">
@@ -1283,10 +1527,65 @@
         <button
           id="btn-power-on"
           type="button"
-          class="px-8 py-3 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded-full border-2 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all active:scale-95"
-        >
+          class="px-8 py-3 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded-full border-2 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all active:scale-95">
           <i class="fa-solid fa-power-off mr-2"></i> Nyalakan HT
         </button>
+      </div>
+    </div>
+
+    <div
+      id="ht-float-widget"
+      class="ht-float-widget"
+      aria-label="PTT mengambang">
+      <div id="ht-float-drag" class="ht-float-header">
+        <span id="ht-float-title" class="ht-float-title">CH 01 · 446.006</span>
+        <span id="ht-float-led" class="ht-float-led"></span>
+        <button
+          id="btn-float-expand"
+          type="button"
+          class="ht-float-expand"
+          title="Buka radio penuh">
+          <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+        </button>
+      </div>
+      <div class="ht-float-body">
+        <div id="ht-float-ptt-single">
+          <button
+            id="ptt-button-float"
+            type="button"
+            class="ht-float-ptt ptt-idle no-select">
+            PTT
+            <span
+              id="ptt-subtext-float"
+              class="text-[9px] font-medium opacity-80"
+              >TAHAN</span
+            >
+          </button>
+        </div>
+        <div id="ht-float-ptt-dual" class="ht-float-dual hidden">
+          <button
+            id="ptt-button-float-a"
+            type="button"
+            class="ht-float-ptt ptt-idle no-select">
+            A
+            <span
+              id="ptt-subtext-float-a"
+              class="text-[8px] font-medium opacity-80"
+              >TAHAN</span
+            >
+          </button>
+          <button
+            id="ptt-button-float-b"
+            type="button"
+            class="ht-float-ptt ptt-idle no-select border-sky-400 bg-sky-950/70 text-sky-100">
+            B
+            <span
+              id="ptt-subtext-float-b"
+              class="text-[8px] font-medium opacity-80"
+              >TAHAN</span
+            >
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1294,9 +1593,7 @@
 
     <div
       id="toast-container"
-      class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center space-y-2 pointer-events-none"
-    ></div>
-
+      class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[90] flex flex-col items-center space-y-2 pointer-events-none"></div>
 
     <script>
       // --- 16 PMR446 Tactical Channels ---
@@ -1367,6 +1664,10 @@
       let micTrack = null;
       let analyserNode = null;
       let visualizerMediaSource = null;
+      const visualizerBySlot = {
+        A: { source: null, analyser: null, canvas: null, ctx: null, idleEl: null },
+        B: { source: null, analyser: null, canvas: null, ctx: null, idleEl: null },
+      };
       let voxAnalyserNode = null;
       let voxMediaSource = null;
       let visualizerAnimFrame = null;
@@ -1384,6 +1685,11 @@
       let highpassNode = null;
       let lowpassNode = null;
       let waveShaperNode = null;
+      let filterMixNode = null;
+      const outgoingBySlot = {
+        A: { gain: null, dest: null, stream: null },
+        B: { gain: null, dest: null, stream: null },
+      };
 
       // PTT & VOX States
       let isTransmitting = false;
@@ -1399,6 +1705,18 @@
       let slotBChannelIdx = 1;
       let activeTxSlot = null;
       let pttBtnA, pttBtnB, pttSubtextA, pttSubtextB;
+      const pttHeld = { A: false, B: false };
+      const pttPointerIds = { A: null, B: null };
+      let lastChannelIdx = 0;
+      let floatingMode = false;
+      let headsetPttEnabled = false;
+      let headsetPttMode = "hold";
+      let headsetPttButton = "playpause";
+      let headsetPttSlot = "A";
+      let headsetPttDown = false;
+      let gamepadPttPressed = false;
+      let gamepadPttRaf = null;
+      let floatPttBtn, floatPttBtnA, floatPttBtnB;
 
       const slotB = {
         id: "B",
@@ -1529,8 +1847,27 @@
         const slot = getSlot(slotId);
         const ch = PMR_CHANNELS[slot.channelIdx];
         if (!ch) return slotId;
-        const num = ch.ch < 10 ? `0${ch.ch}` : `${ch.ch}`;
-        return `CH ${num}`;
+        return `CH ${formatChannelNum(ch)}`;
+      }
+
+      function getOutgoingStreamForSlot(slotId = "A") {
+        return outgoingBySlot[slotId]?.stream || outgoingStream || micStream;
+      }
+
+      function isOwnPeerId(peerId) {
+        return !!peerId && (peerId === myPeerId || peerId === slotB.myPeerId);
+      }
+
+      function getSanitizedRoom(slotId = "A") {
+        return getSlot(slotId)
+          .roomName.toUpperCase()
+          .replace(/[^A-Z0-9]/g, "");
+      }
+
+      function peerBelongsToSlotRoom(peerId, slotId = "A") {
+        if (!peerId) return false;
+        const sanitized = getSanitizedRoom(slotId);
+        return sanitized.length > 0 && peerId.includes(`HT-${sanitized}-`);
       }
 
       function syncSlotBRoomFromIdx() {
@@ -1539,10 +1876,7 @@
       }
 
       function getMqttTopicForSlot(slotId) {
-        const sanitizedRoom = getSlot(slotId).roomName
-          .toUpperCase()
-          .replace(/[^A-Z0-9]/g, "");
-        return `ht_walkie_talkie_v2/room/${sanitizedRoom}`;
+        return `ht_walkie_talkie_v2/room/${getSanitizedRoom(slotId)}`;
       }
 
       // PWA Configuration
@@ -1573,6 +1907,7 @@
       }
 
       function persistAppCache() {
+        const floatEl = document.getElementById("ht-float-widget");
         saveAppCache({
           channelIdx: currentChannelIdx,
           slotBChannelIdx,
@@ -1581,6 +1916,12 @@
           voxThreshold,
           audioFilterEnabled,
           soundFxEnabled,
+          headsetPttEnabled,
+          headsetPttMode,
+          headsetPttButton,
+          headsetPttSlot,
+          floatX: floatEl ? parseInt(floatEl.style.left, 10) || null : null,
+          floatY: floatEl ? parseInt(floatEl.style.top, 10) || null : null,
         });
       }
 
@@ -1613,7 +1954,8 @@
           slotB.channelIdx = slotBChannelIdx;
           syncSlotBRoomFromIdx();
         }
-        if (typeof cache.voxEnabled === "boolean") voxEnabled = cache.voxEnabled;
+        if (typeof cache.voxEnabled === "boolean")
+          voxEnabled = cache.voxEnabled;
         if (typeof cache.voxThreshold === "number") {
           voxThreshold = Math.min(90, Math.max(5, cache.voxThreshold));
         }
@@ -1623,8 +1965,39 @@
         if (typeof cache.soundFxEnabled === "boolean") {
           soundFxEnabled = cache.soundFxEnabled;
         }
+        if (typeof cache.headsetPttEnabled === "boolean") {
+          headsetPttEnabled = cache.headsetPttEnabled;
+        }
+        if (
+          cache.headsetPttMode === "toggle" ||
+          cache.headsetPttMode === "hold"
+        ) {
+          headsetPttMode = cache.headsetPttMode;
+        }
+        if (
+          cache.headsetPttButton === "playpause" ||
+          cache.headsetPttButton === "volup" ||
+          cache.headsetPttButton === "voldown" ||
+          cache.headsetPttButton === "gamepad"
+        ) {
+          headsetPttButton = cache.headsetPttButton;
+        }
+        if (cache.headsetPttSlot === "A" || cache.headsetPttSlot === "B") {
+          headsetPttSlot = cache.headsetPttSlot;
+        }
+        if (Number.isFinite(cache.floatX) && Number.isFinite(cache.floatY)) {
+          const floatEl = document.getElementById("ht-float-widget");
+          if (floatEl) {
+            floatEl.style.left = `${cache.floatX}px`;
+            floatEl.style.top = `${cache.floatY}px`;
+            floatEl.style.right = "auto";
+            floatEl.style.bottom = "auto";
+          }
+        }
+        lastChannelIdx = currentChannelIdx;
         applyCachedSettingsUI();
         syncDualUiMode();
+        syncHeadsetSettingsUI();
       }
 
       function getAssetPath(file) {
@@ -1680,25 +2053,40 @@
 
         const toggleFilter = document.getElementById("toggle-filter");
         if (toggleFilter) {
-          toggleFilter.classList.toggle("ht-toolbar-btn--filter-on", audioFilterEnabled);
-          toggleFilter.classList.toggle("ht-toolbar-btn--filter-off", !audioFilterEnabled);
+          toggleFilter.classList.toggle(
+            "ht-toolbar-btn--filter-on",
+            audioFilterEnabled,
+          );
+          toggleFilter.classList.toggle(
+            "ht-toolbar-btn--filter-off",
+            !audioFilterEnabled,
+          );
         }
 
         const toggleSound = document.getElementById("toggle-sound");
         if (toggleSound) {
-          toggleSound.classList.toggle("ht-toolbar-btn--beep-on", soundFxEnabled);
-          toggleSound.classList.toggle("ht-toolbar-btn--beep-off", !soundFxEnabled);
+          toggleSound.classList.toggle(
+            "ht-toolbar-btn--beep-on",
+            soundFxEnabled,
+          );
+          toggleSound.classList.toggle(
+            "ht-toolbar-btn--beep-off",
+            !soundFxEnabled,
+          );
         }
       }
 
       function applyCachedSettingsUI() {
         if (voxSensSlider) voxSensSlider.value = voxThreshold;
         if (voxSensLabel) voxSensLabel.textContent = `${voxThreshold}%`;
-        if (voxThresholdMarker) voxThresholdMarker.style.left = `${voxThreshold}%`;
+        if (voxThresholdMarker)
+          voxThresholdMarker.style.left = `${voxThreshold}%`;
         const filterStatus = document.getElementById("filter-status");
-        if (filterStatus) filterStatus.textContent = audioFilterEnabled ? "ON" : "OFF";
+        if (filterStatus)
+          filterStatus.textContent = audioFilterEnabled ? "ON" : "OFF";
         const rogerStatus = document.getElementById("roger-status");
-        if (rogerStatus) rogerStatus.textContent = soundFxEnabled ? "ON" : "OFF";
+        if (rogerStatus)
+          rogerStatus.textContent = soundFxEnabled ? "ON" : "OFF";
         syncToolbarUiState();
       }
 
@@ -1744,7 +2132,8 @@
       }
 
       function startSpeakerRelay() {
-        if (!isSpeakerRelayMode() || appPoweredOff || !isMicStreamActive()) return;
+        if (!isSpeakerRelayMode() || appPoweredOff || !isMicStreamActive())
+          return;
         speakerRelayActive = true;
         if (isRemoteRxActive("A")) return;
         if (isTransmitting) return;
@@ -1807,14 +2196,22 @@
         }
 
         if (!isTransmitting && !isRemoteRxActive()) {
-          if (micStream) setupVisualizerSource(micStream);
-          else startVisualizerLoop();
+          if (micStream) {
+            setupVisualizerSource(micStream, "A");
+            if (dualChannelEnabled) setupVisualizerSource(micStream, "B");
+          } else {
+            startVisualizerLoop();
+          }
         }
       }
 
       function finalizePeerRxEnd(peerId, slotId = "A") {
         const slot = getSlot(slotId);
-        if (slot.activeBroadcaster !== peerId && slot.activeBroadcaster !== null) return;
+        if (
+          slot.activeBroadcaster !== peerId &&
+          slot.activeBroadcaster !== null
+        )
+          return;
 
         if (slot.rxHangTimeTimer) {
           clearTimeout(slot.rxHangTimeTimer);
@@ -1830,7 +2227,7 @@
 
         if (slotId === "A" && isSpeakerRelayMode() && speakerRelayActive) {
           resumeSpeakerRelayAfterRx();
-          if (micStream) setupVisualizerSource(micStream);
+          if (micStream) setupVisualizerSource(micStream, "A");
         } else if (!isAnySlotTransmitting() && !isRemoteRxActive()) {
           restoreVoxStandbyState();
         }
@@ -1853,30 +2250,94 @@
         return false;
       }
 
-      function updateIdleVisualizerLabel() {
-        if (!noAudioText) return;
-        if (voxEnabled) {
-          noAudioText.textContent = isTransmitting
-            ? "MENGIRIM..."
-            : "VOX SIAP • MONITOR SUARA";
+      function updateIdleVisualizerLabel(slotId = "A") {
+        const vis = visualizerBySlot[slotId];
+        const el = vis?.idleEl || (slotId === "A" ? noAudioText : null);
+        if (!el) return;
+        const slot = getSlot(slotId);
+        if (slot.isTransmitting) {
+          el.textContent = "MENGIRIM...";
+        } else if (slot.isReceiving) {
+          el.textContent = "RX...";
+        } else if (slotId === "A" && voxEnabled && !dualChannelEnabled) {
+          el.textContent = "VOX SIAP • MONITOR SUARA";
         } else {
-          noAudioText.textContent = "Audio Idle";
+          el.textContent = "Audio Idle";
         }
       }
 
+      function formatFreqShort(ch) {
+        const raw = String(ch?.freq || "");
+        const match = raw.match(/([\d.]+)/);
+        if (!match) return raw.replace(/\s*MHz/i, "").trim();
+        return parseFloat(match[1]).toFixed(3);
+      }
+
+      function formatChannelNum(ch) {
+        const n = ch?.ch ?? 0;
+        return n < 10 ? `0${n}` : `${n}`;
+      }
+
       function formatChannelLabel(ch) {
-        const num = ch.ch < 10 ? `0${ch.ch}` : `${ch.ch}`;
-        return `CH ${num} · ${ch.freq}`;
+        return `CH ${formatChannelNum(ch)} · ${formatFreqShort(ch)}`;
+      }
+
+      function formatDualFreqLabel() {
+        const chA = PMR_CHANNELS[currentChannelIdx];
+        const chB = PMR_CHANNELS[slotBChannelIdx];
+        if (!chA || !chB) return "";
+        return `A ${formatChannelNum(chA)}·${formatFreqShort(chA)} | B ${formatChannelNum(chB)}·${formatFreqShort(chB)}`;
+      }
+
+      function syncDualFreqDisplays() {
+        const chA = PMR_CHANNELS[currentChannelIdx];
+        const chB = PMR_CHANNELS[slotBChannelIdx];
+        const elA = document.getElementById("freq-display-a");
+        const elB = document.getElementById("freq-display-b");
+        if (elA && chA) elA.textContent = formatChannelLabel(chA);
+        if (elB && chB) elB.textContent = formatChannelLabel(chB);
+        if (channelNumDisplay && chA && chB) {
+          channelNumDisplay.textContent = `${formatChannelNum(chA)}/${formatChannelNum(chB)}`;
+        }
+      }
+
+      function bindVisualizerDom() {
+        if (dualChannelEnabled) {
+          visualizerBySlot.A.canvas = document.getElementById("visualizer-a");
+          visualizerBySlot.A.idleEl = document.getElementById("no-audio-text-a");
+          visualizerBySlot.B.canvas = document.getElementById("visualizer-b");
+          visualizerBySlot.B.idleEl = document.getElementById("no-audio-text-b");
+        } else {
+          visualizerBySlot.A.canvas = document.getElementById("visualizer");
+          visualizerBySlot.A.idleEl = document.getElementById("no-audio-text");
+          visualizerBySlot.B.canvas = null;
+          visualizerBySlot.B.idleEl = null;
+        }
+        ["A", "B"].forEach((id) => {
+          const vis = visualizerBySlot[id];
+          vis.ctx = vis.canvas ? vis.canvas.getContext("2d") : null;
+        });
+        canvas = visualizerBySlot.A.canvas;
+        canvasCtx = visualizerBySlot.A.ctx;
+        noAudioText = visualizerBySlot.A.idleEl;
+        analyserNode = visualizerBySlot.A.analyser;
+        visualizerMediaSource = visualizerBySlot.A.source;
       }
 
       function updateChannelDisplayUI(chObj) {
         if (!chObj) return;
         const chNumStr = chObj.ch < 10 ? `0${chObj.ch}` : `${chObj.ch}`;
-        if (freqDisplay) {
+        if (dualChannelEnabled) {
+          const elA = document.getElementById("freq-display-a");
+          if (elA) elA.textContent = formatChannelLabel(chObj);
+          syncDualFreqDisplays();
+        } else if (freqDisplay) {
           freqDisplay.textContent = formatChannelLabel(chObj);
         }
         if (channelNumDisplay) {
-          channelNumDisplay.textContent = chNumStr;
+          channelNumDisplay.textContent = dualChannelEnabled
+            ? `${chNumStr}/${formatChannelNum(PMR_CHANNELS[slotBChannelIdx] || chObj)}`
+            : chNumStr;
         }
         roomName = `PMR-CH-${chObj.ch}`;
       }
@@ -2029,7 +2490,9 @@
         document
           .getElementById("btn-pwa-install-close")
           ?.addEventListener("click", () => {
-            document.getElementById("modal-pwa-install").classList.add("hidden");
+            document
+              .getElementById("modal-pwa-install")
+              .classList.add("hidden");
           });
 
         window.addEventListener("beforeinstallprompt", (e) => {
@@ -2073,11 +2536,7 @@
         ledIndicator,
         ledText,
         txRxBadge;
-      let pttBtn,
-        pttSubtext,
-        freqDisplay,
-        channelNumDisplay,
-        chSelectElem;
+      let pttBtn, pttSubtext, freqDisplay, channelNumDisplay, chSelectElem;
       let canvas,
         canvasCtx,
         noAudioText,
@@ -2152,7 +2611,8 @@
         if (rssiSignalIconElem) {
           rssiSignalIconElem.className = `fa-solid fa-signal ${signalColors[traffic]}`;
         }
-        if (speedDownElem) speedDownElem.textContent = `↓${formatBitrate(downBps)}`;
+        if (speedDownElem)
+          speedDownElem.textContent = `↓${formatBitrate(downBps)}`;
         if (speedUpElem) speedUpElem.textContent = `↑${formatBitrate(upBps)}`;
       }
 
@@ -2177,7 +2637,10 @@
                   (report.state === "succeeded" || report.nominated)
                 ) {
                   if (report.currentRoundTripTime != null) {
-                    rtt = Math.max(rtt || 0, report.currentRoundTripTime * 1000);
+                    rtt = Math.max(
+                      rtt || 0,
+                      report.currentRoundTripTime * 1000,
+                    );
                   }
                 }
                 if (report.type === "inbound-rtp" && report.kind === "audio") {
@@ -2202,8 +2665,14 @@
         if (lastRtcStats.ts > 0) {
           const elapsed = (now - lastRtcStats.ts) / 1000;
           if (elapsed > 0) {
-            downBps = Math.max(0, ((totalRx - lastRtcStats.rxBytes) * 8) / elapsed);
-            upBps = Math.max(0, ((totalTx - lastRtcStats.txBytes) * 8) / elapsed);
+            downBps = Math.max(
+              0,
+              ((totalRx - lastRtcStats.rxBytes) * 8) / elapsed,
+            );
+            upBps = Math.max(
+              0,
+              ((totalTx - lastRtcStats.txBytes) * 8) / elapsed,
+            );
           }
         }
 
@@ -2214,7 +2683,13 @@
             ? (packetsLost / (packetsLost + packetsReceived)) * 100
             : null;
 
-        return { downBps, upBps, rtt, packetLoss, hasRtc: activeCalls.size > 0 };
+        return {
+          downBps,
+          upBps,
+          rtt,
+          packetLoss,
+          hasRtc: activeCalls.size > 0,
+        };
       }
 
       async function refreshNetworkStatus() {
@@ -2246,7 +2721,11 @@
         }
 
         if (!peerOnline && !mqttOnline) {
-          updateNetworkQualityUI({ level: 1, traffic: "yellow" }, downBps, upBps);
+          updateNetworkQualityUI(
+            { level: 1, traffic: "yellow" },
+            downBps,
+            upBps,
+          );
           return;
         }
 
@@ -2405,15 +2884,21 @@
       }
 
       function setupEmojiListeners() {
-        document.getElementById("btn-open-emoji")?.addEventListener("click", () => {
-          openEmojiPopup();
-        });
-        document.getElementById("btn-close-emoji")?.addEventListener("click", () => {
-          closeEmojiPopup();
-        });
-        document.getElementById("modal-emoji")?.addEventListener("click", (e) => {
-          if (e.target.id === "modal-emoji") closeEmojiPopup();
-        });
+        document
+          .getElementById("btn-open-emoji")
+          ?.addEventListener("click", () => {
+            openEmojiPopup();
+          });
+        document
+          .getElementById("btn-close-emoji")
+          ?.addEventListener("click", () => {
+            closeEmojiPopup();
+          });
+        document
+          .getElementById("modal-emoji")
+          ?.addEventListener("click", (e) => {
+            if (e.target.id === "modal-emoji") closeEmojiPopup();
+          });
       }
 
       async function requestNotificationPermission() {
@@ -2426,7 +2911,10 @@
       }
 
       function showBrowserNotification(title, body) {
-        if (!("Notification" in window) || Notification.permission !== "granted") {
+        if (
+          !("Notification" in window) ||
+          Notification.permission !== "granted"
+        ) {
           return;
         }
         try {
@@ -2443,7 +2931,11 @@
 
       function notifyMemberJoined(peerId, slotId = "A") {
         const slot = getSlot(slotId);
-        if (!peerId || peerId === slot.myPeerId || slot.notifiedJoinPeers.has(peerId)) {
+        if (
+          !peerId ||
+          peerId === slot.myPeerId ||
+          slot.notifiedJoinPeers.has(peerId)
+        ) {
           return;
         }
         slot.notifiedJoinPeers.add(peerId);
@@ -2460,7 +2952,11 @@
 
       function notifyMemberLeft(peerId, slotId = "A") {
         const slot = getSlot(slotId);
-        if (!peerId || peerId === slot.myPeerId || !slot.notifiedJoinPeers.has(peerId)) {
+        if (
+          !peerId ||
+          peerId === slot.myPeerId ||
+          !slot.notifiedJoinPeers.has(peerId)
+        ) {
           return;
         }
         const name = getPeerDisplayName(peerId, slotId);
@@ -2510,7 +3006,10 @@
         return online;
       }
 
-      function removePeerFromChannel(peerId, { notify = true, slotId = "A" } = {}) {
+      function removePeerFromChannel(
+        peerId,
+        { notify = true, slotId = "A" } = {},
+      ) {
         const slot = getSlot(slotId);
         if (!peerId || peerId === slot.myPeerId) return;
         if (
@@ -2553,7 +3052,7 @@
           updateCombinedStatus();
           if (slotId === "A" && isSpeakerRelayMode() && speakerRelayActive) {
             resumeSpeakerRelayAfterRx();
-            if (micStream) setupVisualizerSource(micStream);
+            if (micStream) setupVisualizerSource(micStream, slotId);
           } else if (!isAnySlotTransmitting() && !isRemoteRxActive()) {
             restoreVoxStandbyState();
           }
@@ -2603,9 +3102,7 @@
           }
         });
 
-        toRemove.forEach((peerId) =>
-          removePeerFromChannel(peerId, { slotId }),
-        );
+        toRemove.forEach((peerId) => removePeerFromChannel(peerId, { slotId }));
       }
 
       function pruneStalePeers() {
@@ -2709,7 +3206,9 @@
       async function queryMicPermission() {
         if (!navigator.permissions?.query) return "unknown";
         try {
-          const status = await navigator.permissions.query({ name: "microphone" });
+          const status = await navigator.permissions.query({
+            name: "microphone",
+          });
           micPermissionStatus = status;
           status.onchange = () => {
             if (status.state === "granted") {
@@ -2852,18 +3351,17 @@
       }
 
       async function replaceMicOnActiveCalls() {
-        const outTrack =
-          outgoingStream?.getAudioTracks()[0] || micTrack;
-        if (!outTrack) return;
-
         getActiveSlotIds().forEach((slotId) => {
+          const outTrack =
+            getOutgoingStreamForSlot(slotId)?.getAudioTracks()[0] || micTrack;
+          if (!outTrack) return;
           const slot = getSlot(slotId);
           for (const call of slot.activeCalls.values()) {
             const pc = call.peerConnection || call._pc;
             if (!pc) continue;
             const sender = pc
               .getSenders()
-              .find((s) => s.track && s.track.kind === "audio");
+              .find((s) => !s.track || s.track.kind === "audio");
             if (sender) {
               sender.replaceTrack(outTrack).catch((e) => {
                 console.warn("Gagal ganti track audio:", e);
@@ -2889,8 +3387,7 @@
         devices.forEach((device, idx) => {
           const opt = document.createElement("option");
           opt.value = device.deviceId;
-          opt.textContent =
-            device.label || `Mikrofon ${idx + 1}`;
+          opt.textContent = device.label || `Mikrofon ${idx + 1}`;
           if (device.deviceId === selectedMicDeviceId) opt.selected = true;
           select.appendChild(opt);
         });
@@ -2991,12 +3488,16 @@
       }
 
       function setupMicSettingsListeners() {
-        document.getElementById("btn-open-mic")?.addEventListener("click", () => {
-          handleMicToolbarClick();
-        });
-        document.getElementById("btn-close-mic")?.addEventListener("click", () => {
-          document.getElementById("modal-mic").classList.add("hidden");
-        });
+        document
+          .getElementById("btn-open-mic")
+          ?.addEventListener("click", () => {
+            handleMicToolbarClick();
+          });
+        document
+          .getElementById("btn-close-mic")
+          ?.addEventListener("click", () => {
+            document.getElementById("modal-mic").classList.add("hidden");
+          });
         document
           .getElementById("btn-refresh-mic-devices")
           ?.addEventListener("click", async () => {
@@ -3008,17 +3509,19 @@
           .getElementById("btn-save-mic")
           ?.addEventListener("click", saveMicSettings);
 
-        document.querySelectorAll('input[name="mic-source-mode"]').forEach((radio) => {
-          radio.addEventListener("change", (e) => {
-            const devicePanel = document.getElementById("mic-device-panel");
-            if (devicePanel) {
-              devicePanel.classList.toggle(
-                "hidden",
-                e.target.value !== "device",
-              );
-            }
+        document
+          .querySelectorAll('input[name="mic-source-mode"]')
+          .forEach((radio) => {
+            radio.addEventListener("change", (e) => {
+              const devicePanel = document.getElementById("mic-device-panel");
+              if (devicePanel) {
+                devicePanel.classList.toggle(
+                  "hidden",
+                  e.target.value !== "device",
+                );
+              }
+            });
           });
-        });
 
         if (navigator.mediaDevices) {
           navigator.mediaDevices.addEventListener("devicechange", () => {
@@ -3075,8 +3578,10 @@
 
           initAudioContext();
           setupOutgoingAudioGraph(micStream);
-          setupVisualizerSource(micStream);
+          setupVisualizerSource(micStream, "A");
+          if (dualChannelEnabled) setupVisualizerSource(micStream, "B");
           setupVoxAnalyser(micStream);
+          if (appStarted) await replaceMicOnActiveCalls();
           updateMicStatusUI();
           if (appStarted) applyMicSourceModeBehavior();
           return true;
@@ -3140,6 +3645,7 @@
             album: roomName,
           });
           navigator.mediaSession.playbackState = "playing";
+          setupHeadsetPttHandlers();
         }
       }
 
@@ -3167,6 +3673,8 @@
         if (slot.isTransmitting && activeTxSlot === slotId) {
           stopTransmitting(false, {}, slotId);
         }
+        pttHeld[slotId] = false;
+        setTransmissionGain(false, slotId);
         slot.isReceiving = false;
         slot.activeBroadcaster = null;
 
@@ -3251,10 +3759,16 @@
         initAudioContext();
         if (!outgoingStream || !micSourceNode) {
           setupOutgoingAudioGraph(micStream);
-          setupVisualizerSource(micStream);
+          setupVisualizerSource(micStream, "A");
+          if (dualChannelEnabled) setupVisualizerSource(micStream, "B");
           setupVoxAnalyser(micStream);
         }
-        if (isSpeakerRelayMode() && speakerRelayActive && !isTransmitting && !isRemoteRxActive("A")) {
+        if (
+          isSpeakerRelayMode() &&
+          speakerRelayActive &&
+          !isTransmitting &&
+          !isRemoteRxActive("A")
+        ) {
           resumeSpeakerRelayAfterRx();
         }
         return true;
@@ -3289,9 +3803,7 @@
           } else {
             syncChannelIndexFromRoom();
             const chObj = PMR_CHANNELS[currentChannelIdx];
-            if (
-              roomName.toUpperCase() === `PMR-CH-${chObj.ch}`.toUpperCase()
-            ) {
+            if (roomName.toUpperCase() === `PMR-CH-${chObj.ch}`.toUpperCase()) {
               updateChannelDisplayUI(chObj);
             }
           }
@@ -3314,7 +3826,10 @@
         syncDualUiLabels();
       }
 
-      async function switchToRoom(newRoomName, { updateChannelUi = null } = {}) {
+      async function switchToRoom(
+        newRoomName,
+        { updateChannelUi = null } = {},
+      ) {
         if (dualChannelEnabled) {
           await switchToRoomForSlot("A", newRoomName, { updateChannelUi });
           return;
@@ -3379,6 +3894,9 @@
         updateNetworkQualityUI({ level: 0, traffic: "gray" }, 0, 0);
         speakerRelayActive = false;
         activeTxSlot = null;
+        pttHeld.A = false;
+        pttHeld.B = false;
+        exitFloatingMode();
         getActiveSlotIds().forEach((slotId) => {
           const slot = getSlot(slotId);
           if (slot.isTransmitting) {
@@ -3401,7 +3919,9 @@
         if (rxHangTimeTimer) clearTimeout(rxHangTimeTimer);
 
         document.getElementById("modal-poweroff").classList.add("hidden");
-        document.getElementById("overlay-powered-off").classList.remove("hidden");
+        document
+          .getElementById("overlay-powered-off")
+          .classList.remove("hidden");
         updateStatusDisplay("idle");
         usersCountElem.textContent = "0 Online";
         peersListElem.innerHTML =
@@ -3436,21 +3956,27 @@
       function setupOutgoingAudioGraph(stream) {
         if (!audioCtx) return;
 
-        // Clean up if already exists
         if (micSourceNode) {
-          try { micSourceNode.disconnect(); } catch (e) {}
+          try {
+            micSourceNode.disconnect();
+          } catch (e) {}
         }
+        if (filterMixNode) {
+          try {
+            filterMixNode.disconnect();
+          } catch (e) {}
+        }
+        ["A", "B"].forEach((id) => {
+          const prev = outgoingBySlot[id];
+          if (prev?.gain) {
+            try {
+              prev.gain.disconnect();
+            } catch (e) {}
+          }
+        });
 
         micSourceNode = audioCtx.createMediaStreamSource(stream);
-        outgoingGainNode = audioCtx.createGain();
-        // Hard mute — ensure absolutely no audio leaks through until PTT is pressed
-        outgoingGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
-        outgoingGainNode.gain.setValueAtTime(0, audioCtx.currentTime);
 
-        outgoingStreamDestination = audioCtx.createMediaStreamDestination();
-        outgoingStream = outgoingStreamDestination.stream;
-
-        // Filter path
         highpassNode = audioCtx.createBiquadFilter();
         highpassNode.type = "highpass";
         highpassNode.frequency.value = 320;
@@ -3464,22 +3990,32 @@
 
         filterActiveGain = audioCtx.createGain();
         filterBypassGain = audioCtx.createGain();
+        filterMixNode = audioCtx.createGain();
+        filterMixNode.gain.value = 1;
 
-        // Connect Active Path: micSourceNode -> highpassNode -> lowpassNode -> waveShaperNode -> filterActiveGain -> outgoingGainNode
         micSourceNode.connect(highpassNode);
         highpassNode.connect(lowpassNode);
         lowpassNode.connect(waveShaperNode);
         waveShaperNode.connect(filterActiveGain);
-        filterActiveGain.connect(outgoingGainNode);
+        filterActiveGain.connect(filterMixNode);
 
-        // Connect Bypass Path: micSourceNode -> filterBypassGain -> outgoingGainNode
         micSourceNode.connect(filterBypassGain);
-        filterBypassGain.connect(outgoingGainNode);
+        filterBypassGain.connect(filterMixNode);
 
-        // Connect outgoingGainNode to output destination stream
-        outgoingGainNode.connect(outgoingStreamDestination);
+        ["A", "B"].forEach((id) => {
+          const gain = audioCtx.createGain();
+          gain.gain.cancelScheduledValues(audioCtx.currentTime);
+          gain.gain.setValueAtTime(0, audioCtx.currentTime);
+          const dest = audioCtx.createMediaStreamDestination();
+          filterMixNode.connect(gain);
+          gain.connect(dest);
+          outgoingBySlot[id] = { gain, dest, stream: dest.stream };
+        });
 
-        // Apply initial filter status
+        outgoingGainNode = outgoingBySlot.A.gain;
+        outgoingStreamDestination = outgoingBySlot.A.dest;
+        outgoingStream = outgoingBySlot.A.stream;
+
         updateAudioFilterRouting();
       }
 
@@ -3495,17 +4031,23 @@
         }
       }
 
-      function setTransmissionGain(on) {
-        if (!audioCtx || !outgoingGainNode) return;
+      function setTransmissionGain(on, slotId = null) {
+        if (!audioCtx) return;
         const now = audioCtx.currentTime;
-        outgoingGainNode.gain.cancelScheduledValues(now);
-        if (on) {
-          // Ramp up fast to avoid click artifact
-          outgoingGainNode.gain.setValueAtTime(0, now);
-          outgoingGainNode.gain.linearRampToValueAtTime(1, now + 0.015);
-        } else {
-          // Hard zero immediately — no leakage
-          outgoingGainNode.gain.setValueAtTime(0, now);
+        const ids = slotId ? [slotId] : ["A", "B"];
+        ids.forEach((id) => {
+          const node = outgoingBySlot[id]?.gain;
+          if (!node) return;
+          node.gain.cancelScheduledValues(now);
+          node.gain.setValueAtTime(on ? 1 : 0, now);
+        });
+        if (on && slotId) {
+          const otherId = slotId === "A" ? "B" : "A";
+          const otherNode = outgoingBySlot[otherId]?.gain;
+          if (otherNode) {
+            otherNode.gain.cancelScheduledValues(now);
+            otherNode.gain.setValueAtTime(0, now);
+          }
         }
       }
 
@@ -3626,10 +4168,13 @@
                   voxHangTimeTimer = null;
                   return;
                 }
-                const recheck = new Uint8Array(voxAnalyserNode.frequencyBinCount);
+                const recheck = new Uint8Array(
+                  voxAnalyserNode.frequencyBinCount,
+                );
                 voxAnalyserNode.getByteFrequencyData(recheck);
                 let recheckSum = 0;
-                for (let i = 0; i < recheck.length; i++) recheckSum += recheck[i];
+                for (let i = 0; i < recheck.length; i++)
+                  recheckSum += recheck[i];
                 const vol = Math.min(
                   100,
                   Math.round((recheckSum / recheck.length / 128) * 100),
@@ -3659,25 +4204,34 @@
       }
 
       // --- Audio Canvas Visualizer ---
-      function setupVisualizerSource(stream) {
+      function setupVisualizerSource(stream, slotId = "A") {
         if (!audioCtx || !stream) return;
-        if (visualizerMediaSource) {
+        if (!dualChannelEnabled) slotId = "A";
+        const vis = visualizerBySlot[slotId];
+        if (!vis) return;
+
+        if (vis.source) {
           try {
-            visualizerMediaSource.disconnect();
+            vis.source.disconnect();
           } catch (e) {}
-          visualizerMediaSource = null;
+          vis.source = null;
         }
-        if (analyserNode) {
+        if (vis.analyser) {
           try {
-            analyserNode.disconnect();
+            vis.analyser.disconnect();
           } catch (e) {}
         }
 
-        visualizerMediaSource = audioCtx.createMediaStreamSource(stream);
-        analyserNode = audioCtx.createAnalyser();
-        analyserNode.fftSize = 64;
-        analyserNode.smoothingTimeConstant = 0.65;
-        visualizerMediaSource.connect(analyserNode);
+        vis.source = audioCtx.createMediaStreamSource(stream);
+        vis.analyser = audioCtx.createAnalyser();
+        vis.analyser.fftSize = 64;
+        vis.analyser.smoothingTimeConstant = 0.65;
+        vis.source.connect(vis.analyser);
+
+        if (slotId === "A") {
+          analyserNode = vis.analyser;
+          visualizerMediaSource = vis.source;
+        }
 
         startVisualizerLoop();
       }
@@ -3687,70 +4241,102 @@
         drawVisualizer();
       }
 
-      function drawVisualizer() {
-        if (!canvasCtx || appPoweredOff) return;
+      function getVisualizerBarColor(slotId, slotTx, slotRx, barHeight) {
+        if (slotTx) return `rgb(${150 + barHeight * 2}, 30, 30)`;
+        if (slotId === "B") {
+          return slotRx
+            ? `rgb(30, ${140 + barHeight}, ${200 + barHeight})`
+            : `rgb(20, ${120 + barHeight}, ${190 + barHeight})`;
+        }
+        return slotRx
+          ? `rgb(16, ${140 + barHeight * 2}, 180)`
+          : `rgb(16, ${140 + barHeight * 2}, 100)`;
+      }
 
-        visualizerAnimFrame = requestAnimationFrame(drawVisualizer);
+      function drawVisualizerSlot(slotId) {
+        const vis = visualizerBySlot[slotId];
+        if (!vis?.ctx || !vis.canvas?.parentElement) return;
 
-        const width = (canvas.width = canvas.parentElement.clientWidth);
-        const height = (canvas.height = canvas.parentElement.clientHeight);
+        const slot = getSlot(slotId);
+        const width = (vis.canvas.width = vis.canvas.parentElement.clientWidth);
+        const height = (vis.canvas.height = vis.canvas.parentElement.clientHeight);
+        const slotTx = !!slot.isTransmitting;
+        const slotRx = !!(slot.isReceiving && slot.activeBroadcaster);
+        const idleEl = vis.idleEl;
 
         let dataArray = null;
         let bufferLength = 0;
         let showWave = false;
+        let analyser = vis.analyser;
 
-        if (analyserNode && (isTransmitting || isRemoteRxActive())) {
-          bufferLength = analyserNode.frequencyBinCount;
+        if (analyser && (slotTx || slotRx)) {
+          bufferLength = analyser.frequencyBinCount;
           dataArray = new Uint8Array(bufferLength);
-          analyserNode.getByteFrequencyData(dataArray);
-          showWave =
-            getAnalyserActivity(analyserNode) ||
-            isTransmitting ||
-            isRemoteRxActive();
-        } else if (voxEnabled && voxAnalyserNode) {
+          analyser.getByteFrequencyData(dataArray);
+          showWave = getAnalyserActivity(analyser) || slotTx || slotRx;
+        } else if (
+          slotId === "A" &&
+          !dualChannelEnabled &&
+          voxEnabled &&
+          voxAnalyserNode
+        ) {
+          analyser = voxAnalyserNode;
           bufferLength = Math.min(32, voxAnalyserNode.frequencyBinCount);
           dataArray = new Uint8Array(voxAnalyserNode.frequencyBinCount);
           voxAnalyserNode.getByteFrequencyData(dataArray);
-          showWave =
-            getAnalyserActivity(voxAnalyserNode, 4) ||
-            isTransmitting ||
-            !isRemoteRxActive();
-        } else if (isRemoteRxActive()) {
+          showWave = getAnalyserActivity(voxAnalyserNode, 4) || slotTx || !slotRx;
+        } else if (slotRx) {
           showWave = true;
         }
 
         if (!showWave) {
-          canvasCtx.clearRect(0, 0, width, height);
-          updateIdleVisualizerLabel();
-          noAudioText.style.display = "block";
+          vis.ctx.clearRect(0, 0, width, height);
+          updateIdleVisualizerLabel(slotId);
+          if (idleEl) idleEl.style.display = "block";
           return;
         }
 
-        noAudioText.style.display = "none";
+        if (idleEl) idleEl.style.display = "none";
 
+        vis.ctx.clearRect(0, 0, width, height);
         if (!dataArray) {
-          canvasCtx.clearRect(0, 0, width, height);
-          canvasCtx.fillStyle = isReceiving
-            ? "rgb(16, 180, 120)"
-            : "rgb(16, 140, 100)";
-          canvasCtx.fillRect(0, height * 0.35, width, height * 0.3);
+          vis.ctx.fillStyle = slotId === "B"
+            ? "rgb(14, 140, 200)"
+            : slotRx
+              ? "rgb(16, 180, 120)"
+              : "rgb(16, 140, 100)";
+          vis.ctx.fillRect(0, height * 0.35, width, height * 0.3);
           return;
         }
 
-        canvasCtx.clearRect(0, 0, width, height);
         const barWidth = (width / bufferLength) * 2;
         let x = 0;
-
         for (let i = 0; i < bufferLength; i++) {
           const barHeight = (dataArray[i] / 255) * height;
-          canvasCtx.fillStyle = isTransmitting
-            ? `rgb(${150 + barHeight * 2}, 30, 30)`
-            : isReceiving
-              ? `rgb(16, ${140 + barHeight * 2}, 180)`
-              : `rgb(16, ${140 + barHeight * 2}, 100)`;
-          canvasCtx.fillRect(x, height - barHeight, barWidth - 1, barHeight);
+          vis.ctx.fillStyle = getVisualizerBarColor(
+            slotId,
+            slotTx,
+            slotRx,
+            barHeight,
+          );
+          vis.ctx.fillRect(x, height - barHeight, barWidth - 1, barHeight);
           x += barWidth + 1;
         }
+      }
+
+      function drawVisualizer() {
+        if (appPoweredOff) return;
+
+        visualizerAnimFrame = requestAnimationFrame(drawVisualizer);
+
+        if (dualChannelEnabled) {
+          drawVisualizerSlot("A");
+          drawVisualizerSlot("B");
+          return;
+        }
+
+        if (!visualizerBySlot.A.ctx && !canvasCtx) return;
+        drawVisualizerSlot("A");
       }
 
       // --- PeerJS Multi-User Signaling & Mesh Network ---
@@ -3767,7 +4353,9 @@
           leaveChannelSlot(slotId, { sendLeave: true });
         }
 
-        const sanitizedRoom = slot.roomName.toUpperCase().replace(/[^A-Z0-9]/g, "");
+        const sanitizedRoom = slot.roomName
+          .toUpperCase()
+          .replace(/[^A-Z0-9]/g, "");
         const uniqueSuffix = Math.random().toString(36).substring(2, 6);
         slot.myPeerId = `HT-${sanitizedRoom}-${uniqueSuffix}`;
         if (slotId === "A") updateMyDisplayCallsign();
@@ -3798,7 +4386,16 @@
         });
 
         slot.peer.on("call", (call) => {
-          const answerStream = outgoingStream || micStream;
+          if (
+            isOwnPeerId(call.peer) ||
+            !peerBelongsToSlotRoom(call.peer, slotId)
+          ) {
+            try {
+              call.close();
+            } catch (e) {}
+            return;
+          }
+          const answerStream = getOutgoingStreamForSlot(slotId);
           call.answer(answerStream);
 
           call.on("stream", (remoteStream) => {
@@ -3837,6 +4434,8 @@
         conn.on("data", (data) => {
           touchPeerPresence(conn.peer, { lastSeen: Date.now() }, slotId);
 
+          if (data.room && data.room !== slot.roomName) return;
+
           if (data.type === "PTT_START") {
             handlePeerStartedTalking(conn.peer, data.userName, slotId);
           } else if (data.type === "PTT_STOP") {
@@ -3852,7 +4451,11 @@
             markPeerActive(conn.peer, data.displayName || null, slotId);
           } else if (data.type === "UPDATE_NAME") {
             if (data.displayName) {
-              touchPeerPresence(conn.peer, { displayName: data.displayName }, slotId);
+              touchPeerPresence(
+                conn.peer,
+                { displayName: data.displayName },
+                slotId,
+              );
               updatePeersListUI();
             }
           } else if (data.type === "REACTION") {
@@ -3872,7 +4475,8 @@
 
       function connectToPeer(targetPeerId, slotId = "A") {
         const slot = getSlot(slotId);
-        if (targetPeerId === slot.myPeerId) return;
+        if (!targetPeerId || isOwnPeerId(targetPeerId)) return;
+        if (!peerBelongsToSlotRoom(targetPeerId, slotId)) return;
 
         if (slot.dataConnections.has(targetPeerId)) {
           if (isPeerConnectionOpen(targetPeerId, slotId)) return;
@@ -3891,7 +4495,7 @@
           });
         });
 
-        const streamToSend = outgoingStream || micStream;
+        const streamToSend = getOutgoingStreamForSlot(slotId);
         if (streamToSend) {
           const call = slot.peer.call(targetPeerId, streamToSend);
           call.on("stream", (remoteStream) => {
@@ -3921,9 +4525,11 @@
             slot.channelBroadcast.postMessage({
               type: "ANNOUNCE_PEER",
               peerId: slot.myPeerId,
+              room: slot.roomName,
             });
 
             slot.channelBroadcast.onmessage = (event) => {
+              if (event.data.room && event.data.room !== slot.roomName) return;
               if (
                 event.data.type === "ANNOUNCE_PEER" &&
                 event.data.peerId !== slot.myPeerId
@@ -3932,6 +4538,7 @@
                 slot.channelBroadcast.postMessage({
                   type: "ANNOUNCE_ACK",
                   peerId: slot.myPeerId,
+                  room: slot.roomName,
                 });
               } else if (
                 event.data.type === "ANNOUNCE_ACK" &&
@@ -3980,7 +4587,9 @@
             if (t !== topic) return;
             try {
               const payload = JSON.parse(message.toString());
-              if (!payload || payload.peerId === slot.myPeerId) return;
+              if (!payload || isOwnPeerId(payload.peerId)) return;
+              if (payload.room && payload.room !== slot.roomName) return;
+              if (!peerBelongsToSlotRoom(payload.peerId, slotId)) return;
 
               if (
                 payload.type === "ANNOUNCE" ||
@@ -4021,6 +4630,8 @@
               type: actionType,
               peerId: slot.myPeerId,
               displayName: myDisplayName,
+              room: slot.roomName,
+              slot: slotId,
               timestamp: Date.now(),
             }),
           );
@@ -4066,7 +4677,7 @@
         audioEl.srcObject = stream;
         audioEl.play().catch(() => {});
         if (slot.isReceiving && slot.activeBroadcaster === peerId) {
-          setupVisualizerSource(stream);
+          setupVisualizerSource(stream, slotId);
         }
       }
 
@@ -4111,7 +4722,7 @@
         updatePeersListUI();
         const remoteStream = slot.remoteAudioElements.get(peerId)?.srcObject;
         if (remoteStream) {
-          setupVisualizerSource(remoteStream);
+          setupVisualizerSource(remoteStream, slotId);
         }
       }
 
@@ -4121,22 +4732,26 @@
         if (slot.rxHangTimeTimer) clearTimeout(slot.rxHangTimeTimer);
         slot.rxHangTimeTimer = setTimeout(
           () => finalizePeerRxEnd(peerId, slotId),
-          600,
+          160,
         );
       }
 
       // --- PTT Push-to-Talk Action Handlers ---
       function startTransmitting(slotId = "A") {
+        if (appPoweredOff) return;
         if (isSpeakerRelayMode() && slotId === "A") return;
         if (dualChannelEnabled && isSpeakerRelayMode()) return;
         const slot = getSlot(slotId);
+        if (slot.isTransmitting) return;
         if (isAnySlotTransmitting()) return;
         if (isRemoteRxActive(slotId)) return;
         initAudioContext();
 
         if (!isMicStreamActive()) {
           setupMicrophone().then((ok) => {
-            if (ok) executePTTStart({ slotId });
+            if (ok && (pttHeld[slotId] || voxAutoTriggered)) {
+              executePTTStart({ slotId });
+            }
           });
           return;
         }
@@ -4149,28 +4764,48 @@
         quiet = false,
       } = {}) {
         const slot = getSlot(slotId);
+        if (slot.isTransmitting) return;
+        if (!speakerRelay && !voxAutoTriggered && !pttHeld[slotId]) {
+          return;
+        }
+
         slot.isTransmitting = true;
         activeTxSlot = slotId;
         if (speakerRelay || (slotId === "A" && isSpeakerRelayMode())) {
           speakerRelayActive = true;
         }
 
-        if (navigator.vibrate) navigator.vibrate(40);
+        if (navigator.vibrate) navigator.vibrate(25);
 
-        if (!quiet) playSquelchNoise(0.08);
+        if (!quiet) playSquelchNoise(0.05);
         updateCombinedStatus();
 
-        broadcastData({ type: "PTT_START", userName: slot.myPeerId }, slotId);
-        setTransmissionGain(true);
+        broadcastData(
+          {
+            type: "PTT_START",
+            userName: slot.myPeerId,
+            room: slot.roomName,
+            slot: slotId,
+          },
+          slotId,
+        );
+        setTransmissionGain(true, slotId);
 
         if (micStream) {
-          setupVisualizerSource(micStream);
+          setupVisualizerSource(micStream, slotId);
         }
       }
 
-      function stopTransmitting(fromVox = false, { force = false } = {}, slotId = activeTxSlot || "A") {
+      function stopTransmitting(
+        fromVox = false,
+        { force = false } = {},
+        slotId = activeTxSlot || "A",
+      ) {
         const slot = getSlot(slotId);
-        if (!slot.isTransmitting) return;
+        if (!slot.isTransmitting) {
+          setTransmissionGain(false, slotId);
+          return;
+        }
         if (
           speakerRelayActive &&
           slotId === "A" &&
@@ -4182,7 +4817,7 @@
 
         slot.isTransmitting = false;
         if (activeTxSlot === slotId) activeTxSlot = null;
-        setTransmissionGain(false);
+        setTransmissionGain(false, slotId);
 
         if (!fromVox) voxAutoTriggered = false;
         if (force) speakerRelayActive = false;
@@ -4194,11 +4829,28 @@
         playRogerBeep();
         updateCombinedStatus();
 
-        broadcastData({ type: "PTT_STOP" }, slotId);
+        broadcastData(
+          { type: "PTT_STOP", room: slot.roomName, slot: slotId },
+          slotId,
+        );
 
         if (!isAnySlotTransmitting() && !isRemoteRxActive()) {
           restoreVoxStandbyState();
         }
+      }
+
+      function requestPttDown(slotId = "A") {
+        if (appPoweredOff) return;
+        if (!dualChannelEnabled && isSpeakerRelayMode()) return;
+        if (dualChannelEnabled && isSpeakerRelayMode()) return;
+        pttHeld[slotId] = true;
+        startTransmitting(slotId);
+      }
+
+      function requestPttUp(slotId = "A") {
+        pttHeld[slotId] = false;
+        if (!dualChannelEnabled && isSpeakerRelayMode()) return;
+        stopTransmitting(false, {}, slotId);
       }
 
       function getSlotPttElements(slotId) {
@@ -4211,7 +4863,27 @@
         return { btn: pttBtn, sub: pttSubtext };
       }
 
+      function setFloatPttUi(slotId, state) {
+        const isDual = dualChannelEnabled;
+        const btn =
+          slotId === "B" ? floatPttBtnB : isDual ? floatPttBtnA : floatPttBtn;
+        if (!btn) return;
+        btn.classList.toggle("ptt-tx-active", state === "transmitting");
+        btn.classList.toggle("is-rx", state === "receiving");
+        btn.classList.toggle("ptt-idle", state !== "transmitting");
+        const sub = btn.querySelector("span");
+        if (sub) {
+          sub.textContent =
+            state === "transmitting"
+              ? "TX"
+              : state === "receiving"
+                ? "RX"
+                : "TAHAN";
+        }
+      }
+
       function setSlotPttUi(slotId, state, peerInfo = "") {
+        setFloatPttUi(slotId, state);
         const { btn, sub } = getSlotPttElements(slotId);
         if (!btn || !sub) return;
         const chLabel = getSlotChannelLabel(slotId);
@@ -4232,7 +4904,7 @@
           case "receiving":
             btn.className =
               slotId === "B"
-                ? "ptt-slot-btn ptt-idle border-4 border-cyan-600 opacity-60 flex flex-col items-center justify-center text-gray-400 no-select cursor-not-allowed"
+                ? "ptt-slot-btn ptt-idle border-4 border-sky-400 bg-sky-950/40 opacity-70 flex flex-col items-center justify-center text-sky-200 no-select cursor-not-allowed"
                 : dualChannelEnabled
                   ? "ptt-slot-btn ptt-idle border-4 border-cyan-600 opacity-60 flex flex-col items-center justify-center text-gray-400 no-select cursor-not-allowed"
                   : "w-40 h-40 rounded-full ptt-idle border-4 border-cyan-600 opacity-60 flex flex-col items-center justify-center text-gray-400 no-select cursor-not-allowed";
@@ -4242,7 +4914,7 @@
           default:
             btn.className =
               slotId === "B"
-                ? "ptt-slot-btn ptt-idle border-4 border-sky-800 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer"
+                ? "ptt-slot-btn ptt-idle border-4 border-sky-500 bg-sky-950/50 flex flex-col items-center justify-center text-sky-100 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer"
                 : dualChannelEnabled
                   ? "ptt-slot-btn ptt-idle border-4 border-gray-700 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer"
                   : "w-40 h-40 rounded-full ptt-idle border-4 border-gray-700 flex flex-col items-center justify-center text-gray-300 shadow-2xl transition-all duration-75 active:scale-95 no-select cursor-pointer";
@@ -4259,7 +4931,9 @@
       function updateCombinedStatus() {
         syncVoxUiState();
 
-        const txSlot = getActiveSlotIds().find((id) => getSlot(id).isTransmitting);
+        const txSlot = getActiveSlotIds().find(
+          (id) => getSlot(id).isTransmitting,
+        );
         const rxEntries = getActiveSlotIds()
           .map((id) => {
             const slot = getSlot(id);
@@ -4271,6 +4945,7 @@
           })
           .filter(Boolean);
 
+        const floatLed = document.getElementById("ht-float-led");
         if (txSlot) {
           ledIndicator.className =
             "w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_12px_#ef4444] animate-ping";
@@ -4279,6 +4954,8 @@
           txRxBadge.className =
             "px-1.5 py-0.5 rounded text-[10px] bg-rose-950 text-rose-300 font-bold border border-rose-700";
           txRxBadge.textContent = `TX ${getSlotChannelLabel(txSlot)}`;
+          floatLed?.classList.add("is-tx");
+          floatLed?.classList.remove("is-rx");
         } else if (rxEntries.length > 0) {
           const rx = rxEntries[0];
           ledIndicator.className =
@@ -4288,6 +4965,8 @@
           txRxBadge.className =
             "px-1.5 py-0.5 rounded text-[10px] bg-cyan-950 text-cyan-300 font-bold border border-cyan-700";
           txRxBadge.textContent = `RX ${getSlotChannelLabel(rx.slotId)}: ${rx.name}`;
+          floatLed?.classList.add("is-rx");
+          floatLed?.classList.remove("is-tx");
         } else {
           ledIndicator.className =
             "w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]";
@@ -4296,7 +4975,10 @@
           ledText.textContent = dualChannelEnabled ? "DUAL STANDBY" : "STANDBY";
           txRxBadge.className =
             "px-1.5 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-300 font-bold border border-emerald-700";
-          txRxBadge.textContent = dualChannelEnabled ? "DUAL STANDBY" : "STANDBY";
+          txRxBadge.textContent = dualChannelEnabled
+            ? "DUAL STANDBY"
+            : "STANDBY";
+          floatLed?.classList.remove("is-tx", "is-rx");
         }
 
         getActiveSlotIds().forEach((slotId) => {
@@ -4387,7 +5069,11 @@
                 ? "VOX AKTIF • OTOMATIS BICARA"
                 : "TAHAN UNTUK BICARA";
             syncVoxUiState();
-            if (isSpeakerRelayMode() && speakerRelayActive && !isRemoteRxActive("A")) {
+            if (
+              isSpeakerRelayMode() &&
+              speakerRelayActive &&
+              !isRemoteRxActive("A")
+            ) {
               startSpeakerRelay();
             }
             break;
@@ -4471,6 +5157,8 @@
         const hintDual = document.getElementById("ptt-hint-dual");
         const dualBadge = document.getElementById("dual-mode-badge");
         const statusEl = document.getElementById("dual-current-status");
+        const lcdSingle = document.getElementById("lcd-single-panel");
+        const lcdDual = document.getElementById("lcd-dual-panel");
 
         if (dualChannelEnabled) {
           singleWrap?.classList.add("is-hidden");
@@ -4478,12 +5166,19 @@
           hintSingle?.classList.add("hidden");
           hintDual?.classList.remove("hidden");
           dualBadge?.classList.add("is-active");
-          if (freqDisplay) {
-            const chA = PMR_CHANNELS[currentChannelIdx];
-            const chB = PMR_CHANNELS[slotBChannelIdx];
-            if (chA && chB) {
-              freqDisplay.textContent = `${formatChannelLabel(chA)}  |  ${formatChannelLabel(chB)}`;
+          lcdSingle?.classList.add("is-hidden");
+          lcdDual?.classList.add("is-active");
+          bindVisualizerDom();
+          syncDualFreqDisplays();
+          if (micStream) {
+            if (!isRemoteRxActive("A") && !getSlot("A").isTransmitting) {
+              setupVisualizerSource(micStream, "A");
             }
+            if (!isRemoteRxActive("B") && !getSlot("B").isTransmitting) {
+              setupVisualizerSource(micStream, "B");
+            }
+          } else {
+            startVisualizerLoop();
           }
         } else {
           singleWrap?.classList.remove("is-hidden");
@@ -4491,11 +5186,20 @@
           hintSingle?.classList.remove("hidden");
           hintDual?.classList.add("hidden");
           dualBadge?.classList.remove("is-active");
+          lcdSingle?.classList.remove("is-hidden");
+          lcdDual?.classList.remove("is-active");
+          bindVisualizerDom();
           const ch = PMR_CHANNELS[currentChannelIdx];
           if (ch) updateChannelDisplayUI(ch);
+          if (micStream && !isRemoteRxActive("A") && !isTransmitting) {
+            setupVisualizerSource(micStream, "A");
+          } else {
+            startVisualizerLoop();
+          }
         }
 
         syncDualUiLabels();
+        syncFloatWidgetUi();
         if (statusEl) {
           statusEl.textContent = dualChannelEnabled
             ? `Mode: Dual — A ${getSlotChannelLabel("A")} | B ${getSlotChannelLabel("B")}`
@@ -4522,6 +5226,7 @@
         const panel = document.getElementById("dual-slot-b-panel");
         if (toggle) toggle.checked = dualChannelEnabled;
         if (panel) panel.classList.toggle("hidden", !dualChannelEnabled);
+        syncHeadsetSettingsUI();
         syncDualUiMode();
         document.getElementById("modal-dual")?.classList.remove("hidden");
       }
@@ -4549,6 +5254,7 @@
         slotBChannelIdx = Number.isFinite(newBIdx) ? newBIdx : 1;
         slotB.channelIdx = slotBChannelIdx;
         syncSlotBRoomFromIdx();
+        applyHeadsetPttSettings({ persist: false });
         persistAppCache();
         syncDualUiMode();
         document.getElementById("modal-dual")?.classList.add("hidden");
@@ -4584,45 +5290,341 @@
 
       function bindPttSlot(btn, slotId) {
         if (!btn) return;
-        const onStart = (e) => {
+        const onDown = (e) => {
+          if (e.pointerType === "mouse" && e.button !== 0) return;
           e.preventDefault();
-          if (!dualChannelEnabled && isSpeakerRelayMode()) return;
-          startTransmitting(slotId);
+          try {
+            btn.setPointerCapture(e.pointerId);
+          } catch (err) {}
+          pttPointerIds[slotId] = e.pointerId;
+          requestPttDown(slotId);
         };
-        const onStop = (e) => {
+        const onUp = (e) => {
+          if (
+            pttPointerIds[slotId] != null &&
+            e.pointerId !== pttPointerIds[slotId]
+          ) {
+            return;
+          }
           e.preventDefault();
-          if (!dualChannelEnabled && isSpeakerRelayMode()) return;
-          stopTransmitting(false, {}, slotId);
+          try {
+            if (btn.hasPointerCapture?.(e.pointerId)) {
+              btn.releasePointerCapture(e.pointerId);
+            }
+          } catch (err) {}
+          pttPointerIds[slotId] = null;
+          requestPttUp(slotId);
         };
-        btn.addEventListener("mousedown", onStart);
-        btn.addEventListener("mouseup", onStop);
-        btn.addEventListener("mouseleave", onStop);
-        btn.addEventListener("touchstart", onStart, { passive: false });
-        btn.addEventListener("touchend", onStop, { passive: false });
-        btn.addEventListener("touchcancel", onStop, { passive: false });
+        btn.addEventListener("pointerdown", onDown);
+        btn.addEventListener("pointerup", onUp);
+        btn.addEventListener("pointercancel", onUp);
+        btn.addEventListener("lostpointercapture", (e) => {
+          if (pttHeld[slotId] && pttPointerIds[slotId] === e.pointerId) {
+            pttPointerIds[slotId] = null;
+            requestPttUp(slotId);
+          }
+        });
         btn.addEventListener("contextmenu", (e) => e.preventDefault());
       }
 
       function setupDualListeners() {
-        document.getElementById("btn-open-dual")?.addEventListener("click", () => {
-          openDualSettingsModal();
-        });
-        document.getElementById("btn-close-dual")?.addEventListener("click", () => {
-          document.getElementById("modal-dual")?.classList.add("hidden");
-        });
-        document.getElementById("btn-save-dual")?.addEventListener("click", () => {
-          applyDualChannelSettings();
-        });
-        document.getElementById("toggle-dual-channel")?.addEventListener("change", (e) => {
-          document
-            .getElementById("dual-slot-b-panel")
-            ?.classList.toggle("hidden", !e.target.checked);
-        });
-        document.getElementById("modal-dual")?.addEventListener("click", (e) => {
-          if (e.target.id === "modal-dual") {
-            document.getElementById("modal-dual").classList.add("hidden");
+        document
+          .getElementById("btn-open-dual")
+          ?.addEventListener("click", () => {
+            openDualSettingsModal();
+          });
+        document
+          .getElementById("btn-close-dual")
+          ?.addEventListener("click", () => {
+            document.getElementById("modal-dual")?.classList.add("hidden");
+          });
+        document
+          .getElementById("btn-save-dual")
+          ?.addEventListener("click", () => {
+            applyDualChannelSettings();
+          });
+        document
+          .getElementById("toggle-dual-channel")
+          ?.addEventListener("change", (e) => {
+            document
+              .getElementById("dual-slot-b-panel")
+              ?.classList.toggle("hidden", !e.target.checked);
+            const slotEl = document.getElementById("headset-ptt-slot");
+            if (slotEl) slotEl.disabled = !e.target.checked;
+          });
+        document
+          .getElementById("toggle-headset-ptt")
+          ?.addEventListener("change", () => {
+            applyHeadsetPttSettings();
+          });
+        ["headset-ptt-mode", "headset-ptt-button", "headset-ptt-slot"].forEach(
+          (id) => {
+            document.getElementById(id)?.addEventListener("change", () => {
+              applyHeadsetPttSettings();
+            });
+          },
+        );
+        document
+          .getElementById("modal-dual")
+          ?.addEventListener("click", (e) => {
+            if (e.target.id === "modal-dual") {
+              document.getElementById("modal-dual").classList.add("hidden");
+            }
+          });
+      }
+
+      function syncHeadsetSettingsUI() {
+        const toggle = document.getElementById("toggle-headset-ptt");
+        const panel = document.getElementById("headset-ptt-panel");
+        const modeEl = document.getElementById("headset-ptt-mode");
+        const buttonEl = document.getElementById("headset-ptt-button");
+        const slotEl = document.getElementById("headset-ptt-slot");
+        if (toggle) toggle.checked = headsetPttEnabled;
+        if (panel) panel.classList.toggle("hidden", !headsetPttEnabled);
+        if (modeEl) modeEl.value = headsetPttMode;
+        if (buttonEl) buttonEl.value = headsetPttButton;
+        if (slotEl) slotEl.value = headsetPttSlot;
+        if (slotEl) slotEl.disabled = !dualChannelEnabled;
+      }
+
+      function getHeadsetPttSlot() {
+        return dualChannelEnabled && headsetPttSlot === "B" ? "B" : "A";
+      }
+
+      function applyHeadsetPttSettings({ persist = true } = {}) {
+        const toggle = document.getElementById("toggle-headset-ptt");
+        const modeEl = document.getElementById("headset-ptt-mode");
+        const buttonEl = document.getElementById("headset-ptt-button");
+        const slotEl = document.getElementById("headset-ptt-slot");
+        headsetPttEnabled = !!toggle?.checked;
+        headsetPttMode = modeEl?.value === "toggle" ? "toggle" : "hold";
+        headsetPttButton = buttonEl?.value || "playpause";
+        headsetPttSlot = slotEl?.value === "B" ? "B" : "A";
+        document
+          .getElementById("headset-ptt-panel")
+          ?.classList.toggle("hidden", !headsetPttEnabled);
+        if (persist) persistAppCache();
+        setupHeadsetPttHandlers();
+      }
+
+      function setupHeadsetPttHandlers() {
+        if (!("mediaSession" in navigator)) {
+          startGamepadPttLoop();
+          return;
+        }
+
+        const bind = (action, handler) => {
+          try {
+            navigator.mediaSession.setActionHandler(action, handler);
+          } catch (e) {}
+        };
+
+        if (!headsetPttEnabled || headsetPttButton === "gamepad") {
+          bind("play", null);
+          bind("pause", null);
+          bind("stop", null);
+          startGamepadPttLoop();
+          return;
+        }
+
+        const down = () => requestPttDown(getHeadsetPttSlot());
+        const up = () => requestPttUp(getHeadsetPttSlot());
+        const toggle = () => {
+          const slot = getSlot(getHeadsetPttSlot());
+          if (slot.isTransmitting) up();
+          else down();
+        };
+
+        if (headsetPttButton === "playpause") {
+          if (headsetPttMode === "toggle") {
+            bind("play", toggle);
+            bind("pause", toggle);
+            bind("stop", up);
+          } else {
+            bind("play", down);
+            bind("pause", up);
+            bind("stop", up);
           }
+        } else {
+          bind("play", null);
+          bind("pause", null);
+          bind("stop", null);
+        }
+
+        startGamepadPttLoop();
+      }
+
+      function startGamepadPttLoop() {
+        if (gamepadPttRaf) {
+          cancelAnimationFrame(gamepadPttRaf);
+          gamepadPttRaf = null;
+        }
+        if (!headsetPttEnabled || headsetPttButton !== "gamepad") {
+          if (gamepadPttPressed) {
+            gamepadPttPressed = false;
+            requestPttUp(getHeadsetPttSlot());
+          }
+          return;
+        }
+
+        const poll = () => {
+          if (!headsetPttEnabled || headsetPttButton !== "gamepad") {
+            gamepadPttRaf = null;
+            return;
+          }
+          const pads = navigator.getGamepads?.() || [];
+          let pressed = false;
+          for (const pad of pads) {
+            if (!pad) continue;
+            for (const button of pad.buttons) {
+              if (button?.pressed) {
+                pressed = true;
+                break;
+              }
+            }
+            if (pressed) break;
+          }
+          if (pressed && !gamepadPttPressed) {
+            gamepadPttPressed = true;
+            if (headsetPttMode === "toggle") {
+              const slot = getSlot(getHeadsetPttSlot());
+              if (slot.isTransmitting) requestPttUp(getHeadsetPttSlot());
+              else requestPttDown(getHeadsetPttSlot());
+            } else {
+              requestPttDown(getHeadsetPttSlot());
+            }
+          } else if (!pressed && gamepadPttPressed) {
+            gamepadPttPressed = false;
+            if (headsetPttMode === "hold") {
+              requestPttUp(getHeadsetPttSlot());
+            }
+          }
+          gamepadPttRaf = requestAnimationFrame(poll);
+        };
+        gamepadPttRaf = requestAnimationFrame(poll);
+      }
+
+      function isHeadsetMediaKey(e) {
+        const code = e.code || "";
+        const key = e.key || "";
+        if (headsetPttButton === "playpause") {
+          return (
+            code === "MediaPlayPause" ||
+            key === "MediaPlayPause" ||
+            code === "MediaPlay" ||
+            code === "MediaPause" ||
+            code === "MediaStop"
+          );
+        }
+        if (headsetPttButton === "volup") {
+          return code === "AudioVolumeUp" || key === "AudioVolumeUp";
+        }
+        if (headsetPttButton === "voldown") {
+          return code === "AudioVolumeDown" || key === "AudioVolumeDown";
+        }
+        return false;
+      }
+
+      function handleHeadsetKeyEvent(e, isDown) {
+        if (!headsetPttEnabled || appPoweredOff) return false;
+        if (headsetPttButton === "gamepad") return false;
+        if (
+          document.activeElement?.tagName === "INPUT" ||
+          document.activeElement?.tagName === "SELECT" ||
+          document.activeElement?.tagName === "TEXTAREA"
+        ) {
+          return false;
+        }
+        if (!isHeadsetMediaKey(e)) return false;
+        e.preventDefault();
+        if (e.repeat) return true;
+        const slotId = getHeadsetPttSlot();
+        if (headsetPttMode === "toggle") {
+          if (isDown) {
+            const slot = getSlot(slotId);
+            if (slot.isTransmitting) requestPttUp(slotId);
+            else requestPttDown(slotId);
+          }
+          return true;
+        }
+        if (isDown) requestPttDown(slotId);
+        else requestPttUp(slotId);
+        return true;
+      }
+
+      function syncFloatWidgetUi() {
+        const title = document.getElementById("ht-float-title");
+        const single = document.getElementById("ht-float-ptt-single");
+        const dual = document.getElementById("ht-float-ptt-dual");
+        if (dualChannelEnabled) {
+          single?.classList.add("hidden");
+          dual?.classList.remove("hidden");
+          if (title) title.textContent = formatDualFreqLabel();
+        } else {
+          single?.classList.remove("hidden");
+          dual?.classList.add("hidden");
+          const ch = PMR_CHANNELS[currentChannelIdx];
+          if (title && ch) title.textContent = formatChannelLabel(ch);
+        }
+      }
+
+      function enterFloatingMode() {
+        if (appPoweredOff) return;
+        floatingMode = true;
+        document.getElementById("ht-main-shell")?.classList.add("is-minimized");
+        document.getElementById("ht-float-widget")?.classList.add("is-active");
+        document.getElementById("modal-poweroff")?.classList.add("hidden");
+        document.body.classList.add("ht-floating");
+        syncFloatWidgetUi();
+        updateCombinedStatus();
+        showToast("Mode mengambang — PTT tetap aktif.", "info");
+      }
+
+      function exitFloatingMode() {
+        floatingMode = false;
+        document
+          .getElementById("ht-main-shell")
+          ?.classList.remove("is-minimized");
+        document
+          .getElementById("ht-float-widget")
+          ?.classList.remove("is-active");
+        document.body.classList.remove("ht-floating");
+      }
+
+      function setupFloatWidgetDrag() {
+        const widget = document.getElementById("ht-float-widget");
+        const handle = document.getElementById("ht-float-drag");
+        if (!widget || !handle) return;
+        let dragging = false;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        handle.addEventListener("pointerdown", (e) => {
+          if (e.target.closest("button")) return;
+          dragging = true;
+          handle.setPointerCapture(e.pointerId);
+          const rect = widget.getBoundingClientRect();
+          offsetX = e.clientX - rect.left;
+          offsetY = e.clientY - rect.top;
         });
+        handle.addEventListener("pointermove", (e) => {
+          if (!dragging) return;
+          const maxX = window.innerWidth - widget.offsetWidth - 8;
+          const maxY = window.innerHeight - widget.offsetHeight - 8;
+          const x = Math.max(8, Math.min(maxX, e.clientX - offsetX));
+          const y = Math.max(8, Math.min(maxY, e.clientY - offsetY));
+          widget.style.left = `${x}px`;
+          widget.style.top = `${y}px`;
+          widget.style.right = "auto";
+          widget.style.bottom = "auto";
+        });
+        const endDrag = () => {
+          if (!dragging) return;
+          dragging = false;
+          persistAppCache();
+        };
+        handle.addEventListener("pointerup", endDrag);
+        handle.addEventListener("pointercancel", endDrag);
       }
 
       function populateChannelDropdown() {
@@ -4640,9 +5642,13 @@
         bindPttSlot(pttBtn, "A");
         bindPttSlot(pttBtnA, "A");
         bindPttSlot(pttBtnB, "B");
+        bindPttSlot(floatPttBtn, "A");
+        bindPttSlot(floatPttBtnA, "A");
+        bindPttSlot(floatPttBtnB, "B");
 
         // Keyboard Controls — dual: Space=A, T=B; single: Space/T = A
         window.addEventListener("keydown", (e) => {
+          if (handleHeadsetKeyEvent(e, true)) return;
           if (
             document.activeElement.tagName === "INPUT" ||
             document.activeElement.tagName === "SELECT" ||
@@ -4655,21 +5661,22 @@
           if (dualChannelEnabled) {
             if (e.code === "Space") {
               e.preventDefault();
-              startTransmitting("A");
+              requestPttDown("A");
             } else if (e.code === "KeyT") {
               e.preventDefault();
-              startTransmitting("B");
+              requestPttDown("B");
             }
             return;
           }
 
           if (e.code === "Space" || e.code === "KeyT") {
             e.preventDefault();
-            if (!isSpeakerRelayMode()) startTransmitting("A");
+            if (!isSpeakerRelayMode()) requestPttDown("A");
           }
         });
 
         window.addEventListener("keyup", (e) => {
+          if (handleHeadsetKeyEvent(e, false)) return;
           if (
             document.activeElement.tagName === "INPUT" ||
             document.activeElement.tagName === "SELECT" ||
@@ -4681,17 +5688,17 @@
           if (dualChannelEnabled) {
             if (e.code === "Space") {
               e.preventDefault();
-              stopTransmitting(false, {}, "A");
+              requestPttUp("A");
             } else if (e.code === "KeyT") {
               e.preventDefault();
-              stopTransmitting(false, {}, "B");
+              requestPttUp("B");
             }
             return;
           }
 
           if (e.code === "Space" || e.code === "KeyT") {
             e.preventDefault();
-            if (!isSpeakerRelayMode()) stopTransmitting(false, {}, "A");
+            if (!isSpeakerRelayMode()) requestPttUp("A");
           }
         });
 
@@ -4699,6 +5706,7 @@
         window.addEventListener("blur", () => {
           if (isSpeakerRelayMode() && !dualChannelEnabled) return;
           getActiveSlotIds().forEach((slotId) => {
+            pttHeld[slotId] = false;
             const slot = getSlot(slotId);
             if (slot.isTransmitting && !voxAutoTriggered) {
               stopTransmitting(false, {}, slotId);
@@ -4824,48 +5832,78 @@
         setupDualListeners();
 
         // Username Modal Listeners
-        document.getElementById("btn-save-username").addEventListener("click", handleSaveUsername);
-        document.getElementById("username-input").addEventListener("keydown", (e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            handleSaveUsername();
-          }
-        });
-        document.getElementById("btn-edit-username").addEventListener("click", () => {
-          showUsernameModal();
-        });
+        document
+          .getElementById("btn-save-username")
+          .addEventListener("click", handleSaveUsername);
+        document
+          .getElementById("username-input")
+          .addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSaveUsername();
+            }
+          });
+        document
+          .getElementById("btn-edit-username")
+          .addEventListener("click", () => {
+            showUsernameModal();
+          });
         document.getElementById("my-peer-id").addEventListener("click", () => {
           showUsernameModal();
         });
 
-        // Power Off / On
-        document.getElementById("btn-power-off").addEventListener("click", () => {
-          document.getElementById("modal-poweroff").classList.remove("hidden");
-        });
+        // Power Off / On / Mini mengambang
+        document
+          .getElementById("btn-power-off")
+          .addEventListener("click", () => {
+            document
+              .getElementById("modal-poweroff")
+              .classList.remove("hidden");
+          });
+        document
+          .getElementById("btn-minimize")
+          ?.addEventListener("click", () => {
+            enterFloatingMode();
+          });
+        document
+          .getElementById("btn-float-expand")
+          ?.addEventListener("click", () => {
+            exitFloatingMode();
+          });
         document
           .getElementById("btn-poweroff-cancel")
           .addEventListener("click", () => {
             document.getElementById("modal-poweroff").classList.add("hidden");
           });
         document
+          .getElementById("btn-poweroff-float")
+          ?.addEventListener("click", () => {
+            enterFloatingMode();
+          });
+        document
           .getElementById("btn-poweroff-confirm")
           .addEventListener("click", () => {
             powerOffApp();
           });
-        document.getElementById("btn-power-on").addEventListener("click", () => {
-          powerOnApp();
-        });
+        document
+          .getElementById("btn-power-on")
+          .addEventListener("click", () => {
+            powerOnApp();
+          });
+        setupFloatWidgetDrag();
 
         // Mic permission retry
-        document.getElementById("btn-mic-retry").addEventListener("click", async () => {
-          const ok = await setupMicrophone(true);
-          if (ok && !appStarted && !appPoweredOff) {
-            initPeerConnection();
-            await requestWakeLock();
-            startBackgroundKeepAlive();
-            appStarted = true;
-          }
-        });
+        document
+          .getElementById("btn-mic-retry")
+          .addEventListener("click", async () => {
+            const ok = await setupMicrophone(true);
+            if (ok && !appStarted && !appPoweredOff) {
+              initPeerConnection();
+              await requestWakeLock();
+              startBackgroundKeepAlive();
+              appStarted = true;
+            }
+          });
       }
 
       // Service Worker registration for PWA
@@ -4876,10 +5914,7 @@
           navigator.serviceWorker
             .register("/sw.js", { scope: "/" })
             .then((reg) => {
-              console.log(
-                "Service Worker registered with scope:",
-                reg.scope,
-              );
+              console.log("Service Worker registered with scope:", reg.scope);
 
               reg.addEventListener("updatefound", () => {
                 const newWorker = reg.installing;
@@ -4912,11 +5947,20 @@
       }
 
       async function applyChannelChange() {
+        if (dualChannelEnabled && currentChannelIdx === slotBChannelIdx) {
+          currentChannelIdx = lastChannelIdx;
+          if (chSelectElem) chSelectElem.value = currentChannelIdx;
+          showToast("Saluran A harus berbeda dari saluran B.", "warning");
+          return;
+        }
+
+        lastChannelIdx = currentChannelIdx;
         const chObj = PMR_CHANNELS[currentChannelIdx];
 
         playSquelchNoise(0.05);
         await switchToRoom(`PMR-CH-${chObj.ch}`);
         if (dualChannelEnabled) syncDualUiMode();
+        else syncFloatWidgetUi();
         showToast(`Pindah ke ${formatChannelLabel(chObj)} (PTT A)`, "info");
       }
 
@@ -4963,7 +6007,8 @@
         syncDualUiMode();
         applyMicSourceModeBehavior();
         if (micStream && !isSpeakerRelayMode()) {
-          setupVisualizerSource(micStream);
+          setupVisualizerSource(micStream, "A");
+          if (dualChannelEnabled) setupVisualizerSource(micStream, "B");
         } else if (!micStream) {
           startVisualizerLoop();
         }
@@ -5038,12 +6083,16 @@
         pttBtnB = document.getElementById("ptt-button-b");
         pttSubtextA = document.getElementById("ptt-subtext-a");
         pttSubtextB = document.getElementById("ptt-subtext-b");
+        floatPttBtn = document.getElementById("ptt-button-float");
+        floatPttBtnA = document.getElementById("ptt-button-float-a");
+        floatPttBtnB = document.getElementById("ptt-button-float-b");
         freqDisplay = document.getElementById("freq-display");
         channelNumDisplay = document.getElementById("channel-num-display");
         chSelectElem = document.getElementById("channel-select");
         canvas = document.getElementById("visualizer");
-        canvasCtx = canvas.getContext("2d");
+        canvasCtx = canvas ? canvas.getContext("2d") : null;
         noAudioText = document.getElementById("no-audio-text");
+        bindVisualizerDom();
         micWarning = document.getElementById("mic-warning");
         voxBadge = document.getElementById("vox-badge");
         voxStatusElem = document.getElementById("vox-status");
@@ -5083,6 +6132,8 @@
         populateChannelDropdown();
         populateDualChannelSelect();
         syncSlotBRoomFromIdx();
+        lastChannelIdx = currentChannelIdx;
+        setupHeadsetPttHandlers();
 
         setBootProgress(30, "Menyiapkan antarmuka...");
         setupEventListeners();
